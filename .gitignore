@@ -1,3 +1,11 @@
 node_modules/
 dist/
 .tmp/
+
+*.swo
+*.swp
+
+.idea/**
+*.iml
+
+yarn.lock
