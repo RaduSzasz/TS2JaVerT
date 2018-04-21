@@ -6,7 +6,7 @@ import {UnexpectedASTNode} from "./exceptions/UnexpectedASTNode";
 export class Function {
     private constructor(private returnType: Type, private params: FunctionParam[]) {}
 
-    public static fromNode(node: ts.FunctionDeclaration, checker: ts.TypeChecker): Function {
+    public static fromFunctionDeclaration(node: ts.FunctionDeclaration, checker: ts.TypeChecker): Function {
         console.log("Analysing Function");
         const signature = checker.getSignatureFromDeclaration(node);
         const tsReturnType: ts.Type = checker.getReturnTypeOfSignature(signature);
@@ -16,8 +16,14 @@ export class Function {
             .map(param => Variable.fromTsSymbol(param, checker));
         node.body.forEachChild(node => visitStatement(node, checker));
 
-        return undefined;
+        return new Function(returnType, undefined);
     }
+
+    getType(): Type {
+        return this.returnType;
+    }
+
+
 }
 
 function visitStatement(node: ts.Node, checker: ts.TypeChecker) {
@@ -32,20 +38,20 @@ function visitStatement(node: ts.Node, checker: ts.TypeChecker) {
         console.log("VARIABLE DECLARATION");
         if (node.initializer) {
             // Over here it's important to look for identifiers
-            visitExpression(node.initializer, checker);
+            visitExpression(node.initializer);
         }
         const declaredSymbol = checker.getSymbolAtLocation(node.name);
         Variable.fromTsSymbol(declaredSymbol, checker);
     } else if (ts.isReturnStatement(node)) {
         console.log("RETURN STATEMENT");
-        visitExpression(node.expression, checker);
+        visitExpression(node.expression);
     } else {
         console.log("UNKNOWN STATEMENT");
     }
     console.log("EXITING STATEMENT");
 }
 
-function visitExpression(node: ts.Node, checker: ts.TypeChecker) {
+function visitExpression(node: ts.Node) {
     if (ts.isStringLiteral(node) || ts.isNumericLiteral(node)) {
         // Intentionally left empty
     } else if (ts.isIdentifier(node)) {
@@ -54,20 +60,20 @@ function visitExpression(node: ts.Node, checker: ts.TypeChecker) {
         console.log("PROPERTY ACCESS");
         // node represents something like a.b; not a["b"]
         console.log({ ...node, parent: undefined });
-        visitExpression(node.expression, checker);
+        visitExpression(node.expression);
     } else if (ts.isElementAccessExpression(node)) {
         // node represents something like a["b"] or a[x]
-        visitExpression(node.expression, checker);
-        visitExpression(node.argumentExpression, checker);
+        visitExpression(node.expression);
+        visitExpression(node.argumentExpression);
     } else if (ts.isBinaryExpression(node)) {
         console.log("BINARY EXPRESSION");
-        visitExpression(node.left, checker);
-        visitExpression(node.right, checker);
+        visitExpression(node.left);
+        visitExpression(node.right);
     } else if (ts.isObjectLiteralExpression(node)) {
         console.log("OBJECT LITERAL");
         node.properties.map(property => {
             if (ts.isPropertyAssignment(property)) {
-                visitExpression(property, checker)
+                visitExpression(property)
             } else {
                 throw new UnexpectedASTNode(node, property);
             }
@@ -75,11 +81,11 @@ function visitExpression(node: ts.Node, checker: ts.TypeChecker) {
     } else if (ts.isPropertyAssignment(node)) {
         // x: 3
         console.log("PROPERTY ASSIGNMENT");
-        visitExpression(node.initializer, checker);
+        visitExpression(node.initializer);
     } else if (ts.isCallExpression(node)) {
         /// f(a, b), where f, a, b can all be more complicated expressions
-        visitExpression(node.expression, checker);
-        node.arguments.map(arg => visitExpression(arg, checker));
+        visitExpression(node.expression);
+        node.arguments.map(arg => visitExpression(arg));
     }
     else {
         console.log("UNKNOWN EXPRESSION");

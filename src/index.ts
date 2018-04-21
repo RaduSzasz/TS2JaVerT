@@ -30,7 +30,7 @@ function visitForClassesAndMethods(node: ts.Node) {
 }
 
 function analyzeFunction(node: ts.FunctionDeclaration) {
-    Function.fromNode(node, checker);
+    Function.fromFunctionDeclaration(node, checker);
     // node.forEachChild(child => { console.log({ ...child, parent: undefined }); console.log("\n\n"); });
 }
 

@@ -34,5 +34,7 @@ export interface UnionType extends Type {
 }
 
 export function typeFromTSType(tsType: ts.Type): Type {
-    return undefined;
+    if (tsType.flags === ts.TypeFlags.Number) {
+        return { type: TypeFlags.Number };
+    }
 }
