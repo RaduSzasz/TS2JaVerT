@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import {Type, typeFromTSType} from "./Types";
+import { Type, typeFromTSType } from "./Types";
 
 export class Variable {
     private constructor(private name: string, private type: Type) { }
@@ -9,5 +9,12 @@ export class Variable {
         const type = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration);
 
         return new Variable(name, typeFromTSType(type));
+    }
+
+    static fromPropertyDeclaration(propertyDeclaration: ts.PropertyDeclaration, checker: ts.TypeChecker): Variable {
+        const propertyType: ts.Type = checker.getTypeAtLocation(propertyDeclaration);
+        const nameSymbol = checker.getSymbolAtLocation(propertyDeclaration.name);
+
+        return new Variable(nameSymbol.name, typeFromTSType(propertyType));
     }
 }
