@@ -1,4 +1,6 @@
 import * as ts from "typescript";
+import {Variable} from "./Variable";
+
 export enum TypeFlags {
     Any = 1,
     Void = 2,
@@ -8,6 +10,7 @@ export enum TypeFlags {
     ObjectLiteral = 32,
     Class = 64,
     Union = 128,
+    Function = 256,
 }
 
 export interface Type {
@@ -28,6 +31,12 @@ export interface ObjectLiteral extends Type {
     name?: string
 }
 
+export interface FunctionType extends Type {
+    type: TypeFlags.Function,
+    params: Variable[],
+    returnType: Type,
+}
+
 export interface UnionType extends Type {
     type: TypeFlags.Union,
     types: Type[],
@@ -37,4 +46,12 @@ export function typeFromTSType(tsType: ts.Type): Type {
     if (tsType.flags === ts.TypeFlags.Number) {
         return { type: TypeFlags.Number };
     }
+}
+
+export function typeFromParamAndReturnType(params: Variable[], returnType: Type): FunctionType {
+    return {
+        type: TypeFlags.Function,
+        params,
+        returnType,
+    };
 }

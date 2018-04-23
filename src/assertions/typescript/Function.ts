@@ -1,25 +1,38 @@
 import * as ts from "typescript";
-import { Type, typeFromTSType } from "./Types";
+import {Type, typeFromParamAndReturnType, typeFromTSType} from "./Types";
 import { Variable } from "./Variable";
-import { visitStatement } from "./Statement";
 
-export class Function {
-    private constructor(private returnType: Type, private params: Variable[]) {}
+export class Function extends Variable {
+    private capturedVars: Variable[];
+
+    private constructor(private returnType: Type,
+                        private params: Variable[],
+                        name: string) {
+        super(name, typeFromParamAndReturnType(params, returnType));
+    }
 
     public static fromFunctionDeclaration(node: ts.FunctionDeclaration, checker: ts.TypeChecker): Function {
-        console.log("Analysing Function");
         const signature = checker.getSignatureFromDeclaration(node);
+        const name = checker.getSymbolAtLocation(node.name).name;
         const tsReturnType: ts.Type = checker.getReturnTypeOfSignature(signature);
         const returnType = typeFromTSType(tsReturnType);
         const params: Variable[] = signature
             .getParameters()
             .map(param => Variable.fromTsSymbol(param, checker));
-        node.body.forEachChild(node => visitStatement(node, checker));
 
-        return new Function(returnType, params);
+        return new Function(returnType, params, name);
     }
 
-    getType(): Type {
+    getReturnType(): Type {
         return this.returnType;
+    }
+
+    isNamed(): boolean {
+        // != instead of !== on purpose to cover for null and ""
+        return this.name != undefined;
+    }
+
+    getName(): string {
+        return this.name;
     }
 }

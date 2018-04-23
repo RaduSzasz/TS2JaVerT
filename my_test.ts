@@ -19,6 +19,9 @@ class B extends A implements I {
 }
 */
 
+var a: number = 3;
+var b: string = "abc";
+
 function myFunc(a: number, b: number): number {
   return a + b;
 }

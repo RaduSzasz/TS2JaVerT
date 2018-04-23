@@ -15,7 +15,7 @@ describe("A suite for checking if we find identifiers in expressions", () => {
                     if (ts.isFunctionDeclaration(child)) {
                         const analyzedFunction = Function.fromFunctionDeclaration(child, checker);
                         expect(analyzedFunction).toBeTruthy();
-                        expect(analyzedFunction.getType()).toEqual({ type: TypeFlags.Number });
+                        expect(analyzedFunction.getReturnType()).toEqual({ type: TypeFlags.Number });
                     }
                 })
             }

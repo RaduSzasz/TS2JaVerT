@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import { Type, typeFromTSType } from "./Types";
 
 export class Variable {
-    private constructor(private name: string, private type: Type) { }
+    constructor(protected name: string, protected type: Type) { }
 
     static fromTsSymbol(symbol: ts.Symbol, checker: ts.TypeChecker) {
         const name = symbol.getName();
