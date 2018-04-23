@@ -17,4 +17,8 @@ export class Variable {
 
         return new Variable(nameSymbol.name, typeFromTSType(propertyType));
     }
+
+    static nameMatcher(name: string) {
+        return (variable: Variable) => variable.name === name;
+    }
 }

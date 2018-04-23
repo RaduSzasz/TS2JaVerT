@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import { flatten } from "lodash";
 import { Class } from "./Class";
-import { visitStatementToFindDeclaredVars } from "./Statement";
+import { visitStatementToFindCapturedVars, visitStatementToFindDeclaredVars } from "./Statement";
 import { Variable } from "./Variable";
 
 export class Program {
@@ -38,5 +38,21 @@ export class Program {
             this.sourceFileNode.statements
                     .map(statement => visitStatementToFindDeclaredVars(statement, typeChecker))
         );
+    }
+
+    determineCapturedVars(): void {
+        if (this.gamma == undefined) {
+            throw new Error("Can not determine captured vars before establishing gamma contents");
+        }
+        const typeChecker = this.program.getTypeChecker();
+        this.sourceFileNode.statements
+            .forEach(statement => visitStatementToFindCapturedVars(
+                statement,
+                typeChecker,
+                [],
+                this.gamma)
+            );
+
+        console.log(this.gamma);
     }
 }

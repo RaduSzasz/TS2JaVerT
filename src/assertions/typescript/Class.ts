@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import { find } from "lodash";
 import {UnexpectedASTNode} from "./exceptions/UnexpectedASTNode";
 import {Variable} from "./Variable";
-import {visitExpression} from "./Expression";
+import {visitExpressionForCapturedVars} from "./Expression";
 
 export class Class {
     private name: string;
@@ -47,9 +47,6 @@ export class Class {
 
             } else if (ts.isPropertyDeclaration(member)) {
                 this.properties.push(Variable.fromPropertyDeclaration(member, checker));
-                if (member.initializer) {
-                    visitExpression(member.initializer);
-                }
             } else {
                 throw new UnexpectedASTNode(node, member);
             }

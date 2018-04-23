@@ -35,4 +35,12 @@ export class Function extends Variable {
     getName(): string {
         return this.name;
     }
+
+    getParams(): Variable[] {
+        return this.params;
+    }
+
+    setCapturedVars(capturedVars: Variable[]) {
+        this.capturedVars = capturedVars;
+    }
 }

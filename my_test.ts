@@ -27,5 +27,5 @@ function myFunc(a: number, b: number): number {
 }
 
 function myOtherFunc(xkcd: number): number {
-  return myFunc(xkcd, 6);
+  return myFunc(xkcd, a);
 }

@@ -1,6 +1,6 @@
 import * as ts from "typescript";
-import { difference, flatten, uniq } from "lodash";
-import { visitExpression } from "./Expression";
+import { difference, find, flatten, uniq } from "lodash";
+import { visitExpressionForCapturedVars } from "./Expression";
 import { Function } from "./Function";
 import {Variable} from "./Variable";
 
@@ -35,7 +35,6 @@ export function visitStatementToFindDeclaredVars(node: ts.Node, checker: ts.Type
         const declaredSymbol = checker.getSymbolAtLocation(node.name);
         return [Variable.fromTsSymbol(declaredSymbol, checker)];
     } else if (ts.isFunctionDeclaration(node)) {
-        // TODO: This is a bit tricksy
         return [Function.fromFunctionDeclaration(node, checker)];
     } else if (ts.isIfStatement(node)) {
         return [
@@ -49,71 +48,57 @@ export function visitStatementToFindDeclaredVars(node: ts.Node, checker: ts.Type
     }
 }
 
-export function visitStatementAndExtractVars(node: ts.Node, checker: ts.TypeChecker): FunctionBodyVariableUsage {
-    const visitStatementWithChecker = (node: ts.Node) => visitStatementAndExtractVars(node, checker);
-    if (ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node)) {
-        // This is not necessarily true, especially for classes, but since we don't support nested
-        // classes or things like that, it shall be fine
-        return { varsUsed: [], varsDeclared: [] };
+export function visitStatementToFindCapturedVars(
+    node: ts.Node,
+    checker: ts.TypeChecker,
+    outerScope: Variable[],
+    currentScope: Variable[]): Variable[] {
+    const visitStatement = (node: ts.Node) => visitStatementToFindCapturedVars(node, checker, outerScope, currentScope);
+    if (!node || ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node)) {
+        // TODO: Classes can contain captured vars. It's not good practice, but it is possible.
+        return [];
     } else if (ts.isVariableStatement(node)) {
-        // var x = bla, y = akjshd;
-        console.log("VARIABLE STATEMENT");
-        return visitStatementWithChecker(node.declarationList);
+        return visitStatement(node.declarationList);
     }
     else if (ts.isVariableDeclarationList(node)) {
-        // x = bla, y = aksjhf
-        console.log("VARIABLE DELCARATION LIST");
-        return reduceVariableUsages(node.declarations.map(visitStatementWithChecker));
+        uniq(flatten(node.declarations.map(visitStatement)));
     } else if (ts.isVariableDeclaration(node)) {
-        /// x = bla
-        console.log("VARIABLE DECLARATION");
         if (node.initializer) {
-            // Over here it's important to look for identifiers
-            visitExpression(node.initializer);
+            return visitExpressionForCapturedVars(node.initializer, outerScope, currentScope);
         }
-        const declaredSymbol = checker.getSymbolAtLocation(node.name);
-        // Variable.fromTsSymbol(declaredSymbol, checker);
-        return {
-            varsUsed: visitExpression(node.initializer),
-            varsDeclared: [declaredSymbol.name],
-        };
     } else if (ts.isFunctionDeclaration(node)) {
-        console.log("Function declaration");
-        const func = Function.fromFunctionDeclaration(node, checker);
+        // Current function should be declared in the current scope.
+        const functionName = checker.getSymbolAtLocation(node.name).name;
+        const functionVar: Function = find(currentScope, Variable.nameMatcher(functionName)) as Function;
+        console.log("\n\n\n");
+        if (!functionVar) {
+            throw new Error("Current function declaration is not detected in current scope");
+        }
+        const funcStatements = node.body.statements;
+        const declaredWithinFunc: Variable[] = flatten(
+            funcStatements.map(statement => visitStatementToFindDeclaredVars(statement, checker))
+        );
+        // TODO: Consider this should perhaps be a method on functions
+        const withinFuncOuterScope = [...outerScope, ...currentScope];
+        const withinFuncCurrScope = [...functionVar.getParams(), ...declaredWithinFunc];
+        const capturedVars: Variable[] = uniq(flatten(funcStatements.map(statement => visitStatementToFindCapturedVars(
+            statement,
+            checker,
+            withinFuncOuterScope,
+            withinFuncCurrScope
+        ))));
 
-        return {
-            varsDeclared: [func.getName()],
-            varsUsed: []
-        };
+        functionVar.setCapturedVars(capturedVars);
+        return capturedVars;
     } else if (ts.isIfStatement(node)) {
-        const thenBodyVariableUsage = visitStatementWithChecker(node.thenStatement);
-        const elseBodyVariableUsage = node.elseStatement && visitStatementWithChecker(node.elseStatement);
-        return {
-            varsUsed: [
-                ...visitExpression(node.expression),
-                ...thenBodyVariableUsage.varsUsed,
-                ...elseBodyVariableUsage.varsUsed,
-            ],
-            varsDeclared: [
-                ...thenBodyVariableUsage.varsDeclared,
-                ...elseBodyVariableUsage.varsDeclared,
-            ]
-        };
+        return uniq(flatten([
+            ...visitStatement(node.thenStatement),
+            ...visitStatement(node.elseStatement)
+        ]));
     } else if (ts.isWhileStatement(node)) {
-        const whileBodyVariableUsage = visitStatementWithChecker(node.statement);
-        return {
-            varsUsed: [
-                ...visitExpression(node.expression),
-                ...whileBodyVariableUsage.varsUsed,
-            ],
-            varsDeclared: whileBodyVariableUsage.varsDeclared,
-        };
+        return visitStatement(node.statement);
     } else if (ts.isReturnStatement(node)) {
-        /// return a;
-        return {
-            varsUsed: node.expression && visitExpression(node.expression),
-            varsDeclared: [],
-        };
+        return visitExpressionForCapturedVars(node.expression, outerScope, currentScope);
     } else {
         throw new Error(`Unexpected node type ${node.kind} in visitStatementAndExtractVars`);
     }
