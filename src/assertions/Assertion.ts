@@ -1,6 +1,6 @@
 import { Predicate } from "./predicates/Predicate";
 
-class Assertion {
+export class Assertion {
     conjuncts: Predicate[];
 
     public toString() {

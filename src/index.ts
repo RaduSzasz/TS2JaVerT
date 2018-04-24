@@ -9,4 +9,3 @@ const program = new Program(args.file);
 program.determineGamma();
 program.findAllClasses();
 program.determineCapturedVars();
-

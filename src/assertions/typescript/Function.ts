@@ -1,15 +1,11 @@
 import * as ts from "typescript";
-import {Type, typeFromParamAndReturnType, typeFromTSType} from "./Types";
+import * as uuid from "uuid";
+import { Assertion } from "../Assertion";
+import { FunctionSpec } from "../FunctionSpec";
+import { Type, typeFromParamAndReturnType, typeFromTSType } from "./Types";
 import { Variable } from "./Variable";
 
 export class Function extends Variable {
-    private capturedVars: Variable[];
-
-    private constructor(private returnType: Type,
-                        private params: Variable[],
-                        name: string) {
-        super(name, typeFromParamAndReturnType(params, returnType));
-    }
 
     public static fromFunctionDeclaration(node: ts.FunctionDeclaration, checker: ts.TypeChecker): Function {
         const signature = checker.getSignatureFromDeclaration(node);
@@ -18,29 +14,58 @@ export class Function extends Variable {
         const returnType = typeFromTSType(tsReturnType);
         const params: Variable[] = signature
             .getParameters()
-            .map(param => Variable.fromTsSymbol(param, checker));
+            .map((param) => Variable.fromTsSymbol(param, checker));
 
         return new Function(returnType, params, name);
     }
 
-    getReturnType(): Type {
+    private capturedVars: Variable[];
+
+    private constructor(private returnType: Type,
+                        private params: Variable[],
+                        name: string) {
+        super(name, typeFromParamAndReturnType(params, returnType));
+    }
+
+    public getReturnType(): Type {
         return this.returnType;
     }
 
-    isNamed(): boolean {
-        // != instead of !== on purpose to cover for null and ""
-        return this.name != undefined;
+    public isNamed(): boolean {
+        return this.name !== undefined && this.name !== null && this.name !== "";
     }
 
-    getName(): string {
+    public getName(): string {
         return this.name;
     }
 
-    getParams(): Variable[] {
+    public getParams(): Variable[] {
         return this.params;
     }
 
-    setCapturedVars(capturedVars: Variable[]) {
+    public setCapturedVars(capturedVars: Variable[]) {
         this.capturedVars = capturedVars;
+    }
+
+    public generateAsserion(): FunctionSpec {
+        const pre: Assertion = this.generatePreCondition();
+        const post: Assertion = this.generatePostCondition(pre);
+        return {
+            post,
+            pre,
+            uuid: uuid.v4(),
+        };
+    }
+
+    private generatePreCondition(): Assertion {
+        const paramAssertions: Assertion[] = this.params.map(param => param.toAssertion());
+
+        // TODO: Fill this in
+        return undefined;
+    }
+
+    private generatePostCondition(pre: Assertion): Assertion {
+        // TODO: Fill this guy in
+        return undefined;
     }
 }

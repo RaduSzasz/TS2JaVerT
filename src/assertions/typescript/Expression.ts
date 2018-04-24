@@ -1,15 +1,21 @@
-import * as ts from "typescript";
 import { find, flatten, uniq } from "lodash";
+import * as ts from "typescript";
+
 import { Variable } from "./Variable";
 
+export function visitExpressionForCapturedVars(
+    node: ts.Node,
+    outerScope: Variable[],
+    currentScope: Variable[],
+): Variable[] {
 
-export function visitExpressionForCapturedVars(node: ts.Node, outerScope: Variable[], currentScope: Variable[]): Variable[] {
-    const visitExpressionPreservingTypeEnvs = (node: ts.Node) => visitExpressionForCapturedVars(node, outerScope, currentScope);
+    const visitExpressionPreservingTypeEnvs
+        = (n: ts.Node) => visitExpressionForCapturedVars(n, outerScope, currentScope);
     if (ts.isStringLiteral(node) || ts.isNumericLiteral(node)) {
         return [];
     } else if (ts.isIdentifier(node)) {
         if (find(currentScope, Variable.nameMatcher(node.text))) {
-            return []
+            return [];
         }
         const capturedVar = find(outerScope, Variable.nameMatcher(node.text));
         if (!capturedVar) {
@@ -31,9 +37,9 @@ export function visitExpressionForCapturedVars(node: ts.Node, outerScope: Variab
             ...visitExpressionPreservingTypeEnvs(node.right),
         ]);
     } else if (ts.isObjectLiteralExpression(node)) {
-        return uniq(flatten(node.properties.map(property => {
+        return uniq(flatten(node.properties.map((property) => {
             if (ts.isPropertyAssignment(property)) {
-                return visitExpressionPreservingTypeEnvs(property)
+                return visitExpressionPreservingTypeEnvs(property);
             } else {
                 throw new Error(`Object literal expression contains child of kind ${property.kind}`);
             }
@@ -45,7 +51,7 @@ export function visitExpressionForCapturedVars(node: ts.Node, outerScope: Variab
         /// f(a, b), where f, a, b can all be more complicated expressions
         return uniq([
             ...visitExpressionPreservingTypeEnvs(node.expression),
-            ...flatten(node.arguments.map(visitExpressionPreservingTypeEnvs))
+            ...flatten(node.arguments.map(visitExpressionPreservingTypeEnvs)),
         ]);
     } else {
         throw new Error(`Node of kind ${node.kind} is not an expected Expression`);
