@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import * as uuid from "uuid";
 import { Assertion } from "../Assertion";
 import { FunctionSpec } from "../FunctionSpec";
+import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
 import { Type, typeFromParamAndReturnType, typeFromTSType } from "./Types";
 import { Variable } from "./Variable";
 
@@ -27,6 +28,10 @@ export class Function extends Variable {
         super(name, typeFromParamAndReturnType(params, returnType));
     }
 
+    public isFunction(): this is Function {
+        return true;
+    }
+
     public getReturnType(): Type {
         return this.returnType;
     }
@@ -47,7 +52,7 @@ export class Function extends Variable {
         this.capturedVars = capturedVars;
     }
 
-    public generateAsserion(): FunctionSpec {
+    public generateAssertion(): FunctionSpec {
         const pre: Assertion = this.generatePreCondition();
         const post: Assertion = this.generatePostCondition(pre);
         return {
@@ -60,12 +65,11 @@ export class Function extends Variable {
     private generatePreCondition(): Assertion {
         const paramAssertions: Assertion[] = this.params.map((param) => param.toAssertion());
 
-        // TODO: Fill this in
-        return undefined;
+        return new SeparatingConjunctionList(paramAssertions);
     }
 
     private generatePostCondition(pre: Assertion): Assertion {
-        // TODO: Fill this guy in
-        return undefined;
+        const ret = Variable.newReturnVariable(this.returnType);
+        return new SeparatingConjunctionList([pre, ret.toAssertion()]);
     }
 }

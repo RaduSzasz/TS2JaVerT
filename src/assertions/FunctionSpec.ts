@@ -5,3 +5,12 @@ export interface FunctionSpec {
     post: Assertion;
     uuid: string;
 }
+
+export function printFunctionSpec(funcSpec: FunctionSpec) {
+    return `
+        @id ${funcSpec.uuid}
+
+        @pre ${funcSpec.pre.toString()}
+        @post ${funcSpec.post.toString()}
+    `;
+}

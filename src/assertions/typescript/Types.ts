@@ -14,37 +14,50 @@ export enum TypeFlags {
 }
 
 export interface Type {
-    type: TypeFlags;
+    typeFlag: TypeFlags;
 }
 export interface PrimitiveType extends Type {
-    type: TypeFlags.Void | TypeFlags.Number | TypeFlags.String | TypeFlags.Boolean;
+    typeFlag: TypeFlags.Void | TypeFlags.Number | TypeFlags.String | TypeFlags.Boolean;
+}
+export function isPrimitiveType(type: Type): type is PrimitiveType {
+    return type.typeFlag === TypeFlags.Number ||
+        type.typeFlag === TypeFlags.String ||
+        type.typeFlag === TypeFlags.Boolean ||
+        type.typeFlag === TypeFlags.Void;
+}
+
+export interface AnyType extends Type {
+    typeFlag: TypeFlags.Any;
+}
+export function isAnyType(type: Type): type is AnyType {
+    return type.typeFlag === TypeFlags.Any;
 }
 
 export interface Class extends Type {
-    type: TypeFlags.Class;
+    typeFlag: TypeFlags.Class;
     name: string;
 }
 
 // Name is present if the object is an interface.
 export interface ObjectLiteral extends Type {
-    type: TypeFlags.ObjectLiteral;
+    typeFlag: TypeFlags.ObjectLiteral;
     name?: string;
 }
 
 export interface FunctionType extends Type {
-    type: TypeFlags.Function;
+    typeFlag: TypeFlags.Function;
     params: Variable[];
     returnType: Type;
 }
 
 export interface UnionType extends Type {
-    type: TypeFlags.Union;
+    typeFlag: TypeFlags.Union;
     types: Type[];
 }
 
 export function typeFromTSType(tsType: ts.Type): Type {
     if (tsType.flags === ts.TypeFlags.Number) {
-        return { type: TypeFlags.Number };
+        return { typeFlag: TypeFlags.Number };
     }
 }
 
@@ -52,6 +65,6 @@ export function typeFromParamAndReturnType(params: Variable[], returnType: Type)
     return {
         params,
         returnType,
-        type: TypeFlags.Function,
+        typeFlag: TypeFlags.Function,
     };
 }

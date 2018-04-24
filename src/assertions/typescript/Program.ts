@@ -1,6 +1,8 @@
-import { flatten } from "lodash";
+import { find, flatten } from "lodash";
 import * as ts from "typescript";
+import { printFunctionSpec } from "../FunctionSpec";
 import { Class } from "./Class";
+import { Function } from "./Function";
 import { visitStatementToFindCapturedVars, visitStatementToFindDeclaredVars } from "./Statement";
 import { Variable } from "./Variable";
 
@@ -52,5 +54,31 @@ export class Program {
                 [],
                 this.gamma),
             );
+    }
+
+    public placeAssertions(): void {
+        const checker = this.program.getTypeChecker();
+        this.sourceFileNode.statements
+            = ts.createNodeArray(this.sourceFileNode.statements.map((statement: ts.Statement) => {
+                if (!ts.isFunctionDeclaration(statement)) {
+                    return statement;
+                }
+                const funcName = checker.getSymbolAtLocation(statement.name).name;
+                const funcVar: Variable = find(this.gamma, Variable.nameMatcher(funcName));
+                if (!funcVar.isFunction()) {
+                    throw new Error("Function declaration node corresponds to a non function in Gamma");
+                }
+
+                return ts.addSyntheticLeadingComment(
+                    statement,
+                    ts.SyntaxKind.MultiLineCommentTrivia,
+                    printFunctionSpec(funcVar.generateAssertion()),
+                    true,
+                );
+            }));
+    }
+
+    public print(): void {
+        this.program.emit();
     }
 }

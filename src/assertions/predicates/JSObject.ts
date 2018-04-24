@@ -1,8 +1,8 @@
-import {JavertLogicalVariable} from "../variables/JavertLogicalVariable";
-import {JavertObject} from "../variables/JavertObject";
-import {Predicate} from "./Predicate";
+import { Assertion } from "../Assertion";
+import { JavertLogicalVariable } from "../variables/JavertLogicalVariable";
+import { JavertObject } from "../variables/JavertObject";
 
-class JSObject implements Predicate {
+class JSObject implements Assertion {
     constructor(private obj: JavertObject, private proto: JavertObject | JavertLogicalVariable | string) {}
 
     public toString() {
