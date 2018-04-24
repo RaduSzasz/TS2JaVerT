@@ -6,7 +6,8 @@
     "jsRules": {},
     "rules": {
         "ban-types": false,
-        "import-spacing": true
+        "import-spacing": true,
+        "interface-name": [true, "never-prefix"]
     },
     "rulesDirectory": []
 }

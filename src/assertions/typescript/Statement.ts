@@ -1,5 +1,5 @@
-import * as ts from "typescript";
 import { difference, find, flatten, uniq } from "lodash";
+import * as ts from "typescript";
 import { visitExpressionForCapturedVars } from "./Expression";
 import { Function } from "./Function";
 import {Variable} from "./Variable";
@@ -12,8 +12,8 @@ export interface FunctionBodyVariableUsage {
 export function reduceVariableUsages(usages: FunctionBodyVariableUsage[]): FunctionBodyVariableUsage {
     return usages.reduce((prev: FunctionBodyVariableUsage, curr: FunctionBodyVariableUsage) => {
             return {
+                varsDeclared: uniq([...prev.varsDeclared, ...curr.varsDeclared]),
                 varsUsed: uniq([...prev.varsUsed, ...curr.varsUsed]),
-                varsDeclared: uniq([...prev.varsDeclared, ...curr.varsDeclared])
             };
         });
 }
@@ -29,7 +29,7 @@ export function visitStatementToFindDeclaredVars(node: ts.Node, checker: ts.Type
         return visitStatementToFindDeclaredVars(node.declarationList, checker);
     } else if (ts.isVariableDeclarationList(node)) {
         return flatten(
-            node.declarations.map(declaration => visitStatementToFindDeclaredVars(declaration, checker))
+            node.declarations.map((declaration) => visitStatementToFindDeclaredVars(declaration, checker)),
         );
     } else if (ts.isVariableDeclaration(node)) {
         const declaredSymbol = checker.getSymbolAtLocation(node.name);
@@ -53,14 +53,13 @@ export function visitStatementToFindCapturedVars(
     checker: ts.TypeChecker,
     outerScope: Variable[],
     currentScope: Variable[]): Variable[] {
-    const visitStatement = (node: ts.Node) => visitStatementToFindCapturedVars(node, checker, outerScope, currentScope);
+    const visitStatement = (n: ts.Node) => visitStatementToFindCapturedVars(n, checker, outerScope, currentScope);
     if (!node || ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node)) {
         // TODO: Classes can contain captured vars. It's not good practice, but it is possible.
         return [];
     } else if (ts.isVariableStatement(node)) {
         return visitStatement(node.declarationList);
-    }
-    else if (ts.isVariableDeclarationList(node)) {
+    } else if (ts.isVariableDeclarationList(node)) {
         uniq(flatten(node.declarations.map(visitStatement)));
     } else if (ts.isVariableDeclaration(node)) {
         if (node.initializer) {
@@ -70,30 +69,30 @@ export function visitStatementToFindCapturedVars(
         // Current function should be declared in the current scope.
         const functionName = checker.getSymbolAtLocation(node.name).name;
         const functionVar: Function = find(currentScope, Variable.nameMatcher(functionName)) as Function;
-        console.log("\n\n\n");
         if (!functionVar) {
             throw new Error("Current function declaration is not detected in current scope");
         }
         const funcStatements = node.body.statements;
         const declaredWithinFunc: Variable[] = flatten(
-            funcStatements.map(statement => visitStatementToFindDeclaredVars(statement, checker))
+            funcStatements.map((statement) => visitStatementToFindDeclaredVars(statement, checker)),
         );
         // TODO: Consider this should perhaps be a method on functions
         const withinFuncOuterScope = [...outerScope, ...currentScope];
         const withinFuncCurrScope = [...functionVar.getParams(), ...declaredWithinFunc];
-        const capturedVars: Variable[] = uniq(flatten(funcStatements.map(statement => visitStatementToFindCapturedVars(
-            statement,
-            checker,
-            withinFuncOuterScope,
-            withinFuncCurrScope
-        ))));
+        const capturedVars: Variable[] = uniq(flatten(
+            funcStatements.map((statement) => visitStatementToFindCapturedVars(
+                statement,
+                checker,
+                withinFuncOuterScope,
+                withinFuncCurrScope,
+            ))));
 
         functionVar.setCapturedVars(capturedVars);
         return capturedVars;
     } else if (ts.isIfStatement(node)) {
         return uniq(flatten([
             ...visitStatement(node.thenStatement),
-            ...visitStatement(node.elseStatement)
+            ...visitStatement(node.elseStatement),
         ]));
     } else if (ts.isWhileStatement(node)) {
         return visitStatement(node.statement);

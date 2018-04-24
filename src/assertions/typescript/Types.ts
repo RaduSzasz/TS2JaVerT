@@ -14,32 +14,32 @@ export enum TypeFlags {
 }
 
 export interface Type {
-    type: TypeFlags
+    type: TypeFlags;
 }
 export interface PrimitiveType extends Type {
-    type: TypeFlags.Void | TypeFlags.Number | TypeFlags.String | TypeFlags.Boolean
+    type: TypeFlags.Void | TypeFlags.Number | TypeFlags.String | TypeFlags.Boolean;
 }
 
 export interface Class extends Type {
-    type: TypeFlags.Class,
-    name: string,
+    type: TypeFlags.Class;
+    name: string;
 }
 
 // Name is present if the object is an interface.
 export interface ObjectLiteral extends Type {
-    type: TypeFlags.ObjectLiteral,
-    name?: string
+    type: TypeFlags.ObjectLiteral;
+    name?: string;
 }
 
 export interface FunctionType extends Type {
-    type: TypeFlags.Function,
-    params: Variable[],
-    returnType: Type,
+    type: TypeFlags.Function;
+    params: Variable[];
+    returnType: Type;
 }
 
 export interface UnionType extends Type {
-    type: TypeFlags.Union,
-    types: Type[],
+    type: TypeFlags.Union;
+    types: Type[];
 }
 
 export function typeFromTSType(tsType: ts.Type): Type {
@@ -50,8 +50,8 @@ export function typeFromTSType(tsType: ts.Type): Type {
 
 export function typeFromParamAndReturnType(params: Variable[], returnType: Type): FunctionType {
     return {
-        type: TypeFlags.Function,
         params,
         returnType,
+        type: TypeFlags.Function,
     };
 }

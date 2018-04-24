@@ -58,7 +58,7 @@ export class Function extends Variable {
     }
 
     private generatePreCondition(): Assertion {
-        const paramAssertions: Assertion[] = this.params.map(param => param.toAssertion());
+        const paramAssertions: Assertion[] = this.params.map((param) => param.toAssertion());
 
         // TODO: Fill this in
         return undefined;

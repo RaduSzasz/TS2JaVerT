@@ -1,7 +1,7 @@
 export class JavertObject {
     constructor(private identifier: string) {}
 
-    toString() {
+    public toString() {
         return this.identifier;
     }
 }
