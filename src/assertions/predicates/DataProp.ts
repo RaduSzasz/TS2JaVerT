@@ -1,6 +1,10 @@
-import { JavertLogicalVariable } from "../variables/JavertLogicalVariable";
-import { JavertObject } from "../variables/JavertObject";
+import { Assertion } from "../Assertion";
+import { Variable } from "../typescript/Variable";
 
-class DataProp {
-    constructor(private obj: JavertLogicalVariable | JavertObject) { }
+export class DataProp implements Assertion {
+    constructor(private obj: Variable, private field: Variable, private logicalVariable: Variable) { }
+
+    public toString() {
+        return `DataProp(${this.obj.name}, ${this.field.name}, ${this.logicalVariable.name})`;
+    }
 }

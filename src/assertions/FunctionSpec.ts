@@ -12,5 +12,5 @@ export function printFunctionSpec(funcSpec: FunctionSpec) {
 
         @pre ${funcSpec.pre.toString()}
         @post ${funcSpec.post.toString()}
-    `;
+`;
 }

@@ -6,7 +6,8 @@ import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionLi
 import { True } from "../predicates/True";
 import { TypesPredicate } from "../predicates/TypesPredicate";
 import { Function } from "./Function";
-import { isAnyType, isPrimitiveType, Type, TypeFlags, typeFromTSType } from "./Types";
+import { Interface } from "./Interface";
+import { Class, isAnyType, isPrimitiveType, Type, TypeFlags, typeFromTSType } from "./Types";
 
 export class Variable {
     public static fromTsSymbol(symbol: ts.Symbol, checker: ts.TypeChecker): Variable {
@@ -32,6 +33,11 @@ export class Variable {
 
     public static logicalVariableFromVariable(variable: Variable) {
         return new Variable(`#${variable.name}`, variable.type);
+    }
+
+    public static protoLogicalVariable(t: Interface | Class) {
+        // Not sure if Void is the best way to go here.
+        return new Variable(`#${t.name}proto`, { typeFlag: TypeFlags.Void });
     }
 
     public static nameMatcher(name: string) {

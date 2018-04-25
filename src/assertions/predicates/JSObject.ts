@@ -1,19 +1,18 @@
 import { Assertion } from "../Assertion";
-import { JavertLogicalVariable } from "../variables/JavertLogicalVariable";
-import { JavertObject } from "../variables/JavertObject";
+import { Variable } from "../typescript/Variable";
 
-class JSObject implements Assertion {
-    constructor(private obj: JavertObject, private proto: JavertObject | JavertLogicalVariable | string) {}
+export class JSObject implements Assertion {
+    constructor(private obj: Variable, private proto: Variable | "Object.prototype") {}
 
     public toString() {
-        return `JSObject(${this.obj.toString()}, ${this.protoToString()}`;
+        return `JSObject(${this.obj.name}, ${this.protoToString()}`;
     }
 
     private protoToString() {
-        if (typeof this.proto === "string") {
+        if (this.proto === "Object.prototype") {
             return this.proto;
         }
-        return this.proto.toString();
+        return this.proto.name;
     }
 
 }

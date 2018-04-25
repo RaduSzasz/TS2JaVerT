@@ -58,6 +58,8 @@ export interface UnionType extends Type {
 export function typeFromTSType(tsType: ts.Type): Type {
     if (tsType.flags === ts.TypeFlags.Number) {
         return { typeFlag: TypeFlags.Number };
+    } else if (tsType.flags === ts.TypeFlags.String) {
+        return { typeFlag: TypeFlags.String };
     }
 }
 
