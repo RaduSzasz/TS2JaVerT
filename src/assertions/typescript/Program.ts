@@ -59,26 +59,56 @@ export class Program {
     public placeAssertions(): void {
         const checker = this.program.getTypeChecker();
         this.sourceFileNode.statements
-            = ts.createNodeArray(this.sourceFileNode.statements.map((statement: ts.Statement) => {
+            = ts.createNodeArray(this.sourceFileNode.statements.map((statement) => {
                 if (!ts.isFunctionDeclaration(statement)) {
                     return statement;
                 }
-                const funcName = checker.getSymbolAtLocation(statement.name).name;
-                const funcVar: Variable = find(this.gamma, Variable.nameMatcher(funcName));
-                if (!funcVar.isFunction()) {
-                    throw new Error("Function declaration node corresponds to a non function in Gamma");
-                }
-
-                return ts.addSyntheticLeadingComment(
-                    statement,
-                    ts.SyntaxKind.MultiLineCommentTrivia,
-                    printFunctionSpec(funcVar.generateAssertion()),
-                    true,
-                );
             }));
     }
 
     public print(): void {
-        this.program.emit();
+        const checker = this.program.getTypeChecker();
+        this.program.emit(this.sourceFileNode,
+            undefined,
+            undefined,
+            undefined,
+            {
+                before: [(context) => {
+                    return (src) => {
+                        src.statements = ts.createNodeArray(src.statements.map((node) => {
+                            if (ts.isFunctionDeclaration(node)) {
+                                const funcName = checker.getSymbolAtLocation(node.name).name;
+                                const funcVar: Variable = find(this.gamma, Variable.nameMatcher(funcName));
+                                if (!funcVar.isFunction()) {
+                                    throw new Error("Function declaration node corresponds to a non function in Gamma");
+                                }
+
+                                return ts.addSyntheticLeadingComment(
+                                    node,
+                                    ts.SyntaxKind.MultiLineCommentTrivia,
+                                    printFunctionSpec(funcVar.generateAssertion()),
+                                    true,
+                                );
+                            }
+                            return node;
+                        }));
+                        return src;
+                    };
+                }],
+            });
+        /*
+        const printer = ts.createPrinter(undefined, {
+            substituteNode: (hint, node) => {
+                if (ts.isFunctionDeclaration(node)) {
+                    return ts.addSyntheticLeadingComment(
+                        node,
+                        ts.SyntaxKind.MultiLineCommentTrivia,
+                        "My long desired comment",
+                        true,
+                    );
+                }
+            },
+        });
+        */
     }
 }
