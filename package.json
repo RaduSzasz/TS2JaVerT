@@ -1,7 +1,7 @@
 {
-  "name": "typescript-project-template",
+  "name": "project",
   "version": "1.0.0",
-  "description": " Simple typescript project template ",
+  "description": " Simple TS Project",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -9,21 +9,21 @@
     "test": "jasmine ./.tmp/test/index.js",
     "start": "npm run build && node dist/index.js"
   },
-  "author": "Stefan Huber",
-  "license": "BSD-2-Clause",
+  "author": "Radu Szasz",
   "devDependencies": {
     "@types/jasmine": "^2.8.6",
     "@types/lodash": "^4.14.107",
-    "@types/node": "^9.6.5",
+    "@types/node": "^9.6.6",
     "@types/uuid": "^3.4.3",
     "@types/yargs": "^11.0.0",
     "jasmine": "^3.1.0",
-    "typescript": "^2.7.2"
+    "npm": "^6.0.0",
+    "typescript": "^2.8.3"
   },
   "dependencies": {
     "lodash": "^4.17.5",
-    "npm": "^5.8.0",
+    "node": "^9.11.0",
     "uuid": "^3.2.1",
-    "yargs": "^11.0.0"
+    "yargs": "^11.1.0"
   }
 }
