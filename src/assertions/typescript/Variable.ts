@@ -1,6 +1,8 @@
 import * as ts from "typescript";
 import { Assertion } from "../Assertion";
 import { Emp } from "../predicates/Emp";
+import { ScopePredicate } from "../predicates/ScopePredicate";
+import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
 import { True } from "../predicates/True";
 import { TypesPredicate } from "../predicates/TypesPredicate";
 import { Function } from "./Function";
@@ -28,11 +30,15 @@ export class Variable {
         return new Variable("ret", type);
     }
 
+    public static logicalVariableFromVariable(variable: Variable) {
+        return new Variable(`#${variable.name}`, variable.type);
+    }
+
     public static nameMatcher(name: string) {
         return (variable: Variable) => variable.name === name;
     }
 
-    constructor(protected name: string, protected type: Type) { }
+    constructor(public name: string, protected type: Type) { }
 
     public isFunction(): this is Function {
         return false;
@@ -48,5 +54,13 @@ export class Variable {
         } else if (isAnyType(type)) {
             return new True();
         }
+    }
+
+    public toAssertionExtractingScope(): Assertion {
+        const logicalVariable = Variable.logicalVariableFromVariable(this);
+        return new SeparatingConjunctionList([
+            new ScopePredicate(this, logicalVariable),
+            logicalVariable.toAssertion(),
+        ]);
     }
 }

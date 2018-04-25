@@ -64,8 +64,11 @@ export class Function extends Variable {
 
     private generatePreCondition(): Assertion {
         const paramAssertions: Assertion[] = this.params.map((param) => param.toAssertion());
+        const capturedVariableAssertions: Assertion[]
+            = this.capturedVars
+                    .map((capturedVar) => capturedVar.toAssertionExtractingScope());
 
-        return new SeparatingConjunctionList(paramAssertions);
+        return new SeparatingConjunctionList([...paramAssertions, ...capturedVariableAssertions]);
     }
 
     private generatePostCondition(pre: Assertion): Assertion {
