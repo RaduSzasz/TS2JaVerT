@@ -1,10 +1,9 @@
 import { Assertion } from "../Assertion";
-import { Variable } from "../typescript/Variable";
 
 export class FunctionObject implements Assertion {
-    constructor(private obj: Variable) { }
+    constructor(private obj: string) { }
 
     public toString() {
-        return `FunctionObject(${this.obj.name}, _, _, _)`;
+        return `FunctionObject(${this.obj}, _, _, _)`;
     }
 }

@@ -12,7 +12,7 @@ export class Function extends Variable {
         const signature = checker.getSignatureFromDeclaration(node);
         const name = checker.getSymbolAtLocation(node.name).name;
         const tsReturnType: ts.Type = checker.getReturnTypeOfSignature(signature);
-        const returnType = typeFromTSType(tsReturnType);
+        const returnType = typeFromTSType(tsReturnType, checker);
         const params: Variable[] = signature
             .getParameters()
             .map((param) => Variable.fromTsSymbol(param, checker));

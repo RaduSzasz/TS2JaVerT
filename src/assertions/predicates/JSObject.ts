@@ -2,10 +2,10 @@ import { Assertion } from "../Assertion";
 import { Variable } from "../typescript/Variable";
 
 export class JSObject implements Assertion {
-    constructor(private obj: Variable, private proto: Variable | "Object.prototype") {}
+    constructor(private obj: string, private proto: Variable | "Object.prototype") {}
 
     public toString() {
-        return `JSObject(${this.obj.name}, ${this.protoToString()}`;
+        return `JSObject(${this.obj}, ${this.protoToString()}`;
     }
 
     private protoToString() {

@@ -11,19 +11,20 @@ import { Function } from "./Function";
 import { Interface } from "./Interface";
 import {
     isAnyType,
-    isInterfaceType,
+    isInterfaceType, isObjectLiteralType,
     isPrimitiveType,
     Type,
     TypeFlags,
-    typeFromTSType
+    typeFromTSType,
 } from "./Types";
+import uuid = require("uuid");
 
 export class Variable {
     public static fromTsSymbol(symbol: ts.Symbol, checker: ts.TypeChecker): Variable {
         const name = symbol.getName();
         const type = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration);
 
-        return new Variable(name, typeFromTSType(type));
+        return new Variable(name, typeFromTSType(type, checker));
     }
 
     public static fromPropertyDeclaration(
@@ -33,7 +34,7 @@ export class Variable {
         const propertyType: ts.Type = checker.getTypeAtLocation(propertyDeclaration);
         const nameSymbol = checker.getSymbolAtLocation(propertyDeclaration.name);
 
-        return new Variable(nameSymbol.name, typeFromTSType(propertyType));
+        return new Variable(nameSymbol.name, typeFromTSType(propertyType, checker));
     }
 
     public static newReturnVariable(type: Type): Variable {
@@ -44,9 +45,10 @@ export class Variable {
         return new Variable(`#${variable.name}`, variable.type);
     }
 
-    public static protoLogicalVariable(t: Interface | Class) {
+    public static protoLogicalVariable(t?: Class) {
+        const name = (t && t.name) || uuid.v4();
         // Not sure if Void is the best way to go here.
-        return new Variable(`#${t.name}proto`, { typeFlag: TypeFlags.Void });
+        return new Variable(`#${name}proto`, { typeFlag: TypeFlags.Void });
     }
 
     public static nameMatcher(name: string) {
@@ -70,7 +72,11 @@ export class Variable {
             return new True();
         } else if (isInterfaceType(type)) {
             return new CustomPredicate(type.name, name);
+        } else if (isObjectLiteralType(type)) {
+            return type.objectLiteralType.toAssertion(name);
         }
+
+        throw new Error(`Can not convert type ${this.type.typeFlag} to assertion`);
     }
 
     public toAssertionExtractingScope(): Assertion {

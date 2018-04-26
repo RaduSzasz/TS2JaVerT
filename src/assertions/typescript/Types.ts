@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { ObjectLiteral } from "./ObjectLiteral";
 import {Variable} from "./Variable";
 
 export enum TypeFlags {
@@ -7,7 +8,7 @@ export enum TypeFlags {
     Boolean = 4,
     Number = 8,
     String = 16,
-    ObjectLiteral = 32,
+    ObjectLiteralType = 32,
     Class = 64,
     Interface = 128,
     Union = 256,
@@ -48,10 +49,12 @@ export interface ClassType extends Type {
     name: string;
 }
 
-// Name is present if the object is an interface.
-export interface ObjectLiteral extends Type {
-    typeFlag: TypeFlags.ObjectLiteral;
-    name?: string;
+export interface ObjectLiteralType extends Type {
+    typeFlag: TypeFlags.ObjectLiteralType;
+    objectLiteralType: ObjectLiteral;
+}
+export function isObjectLiteralType(type: Type): type is ObjectLiteralType {
+    return type.typeFlag === TypeFlags.ObjectLiteralType;
 }
 
 export interface FunctionType extends Type {
@@ -65,24 +68,34 @@ export interface UnionType extends Type {
     types: Type[];
 }
 
-export function typeFromTSType(tsType: ts.Type): Type {
-    if (tsType.flags === ts.TypeFlags.Number) {
-        return { typeFlag: TypeFlags.Number };
-    } else if (tsType.flags === ts.TypeFlags.String) {
-        return { typeFlag: TypeFlags.String };
-    } else if (tsType.flags === ts.TypeFlags.Object) {
-        const symbol = tsType.symbol;
-        if (symbol.flags === ts.SymbolFlags.TypeLiteral) {
-            /// TODO: Store type literal
-        } else if (symbol.flags === ts.SymbolFlags.Interface) {
-            return {
-                name: symbol.getName(),
-                typeFlag: TypeFlags.Interface,
-            } as InterfaceType;
-        } else if (symbol.flags === ts.SymbolFlags.Class) {
-            // TODO: Store class
-        }
+export function typeFromTSType(tsType: ts.Type, checker: ts.TypeChecker): Type {
+    switch (tsType.flags) {
+        case ts.TypeFlags.Number:
+            return { typeFlag: TypeFlags.Number };
+        case ts.TypeFlags.Void:
+            return { typeFlag: TypeFlags.Void };
+        case ts.TypeFlags.String:
+            /// Not sure if this is what we want...
+            return { typeFlag: TypeFlags.String };
+        case ts.TypeFlags.Object:
+            const symbol = tsType.symbol;
+            if (symbol.flags === ts.SymbolFlags.TypeLiteral) {
+                const objectLiteralType = new ObjectLiteral(symbol.members, checker);
+                return {
+                    objectLiteralType,
+                    typeFlag: TypeFlags.ObjectLiteralType,
+                } as ObjectLiteralType;
+            } else if (symbol.flags === ts.SymbolFlags.Interface) {
+                return {
+                    name: symbol.getName(),
+                    typeFlag: TypeFlags.Interface,
+                } as InterfaceType;
+            } else if (symbol.flags === ts.SymbolFlags.Class) {
+                // TODO: Store class
+            }
+            break;
     }
+    throw new Error(`Unexpected TypeScript type: ${tsType.flags}!`);
 }
 
 export function typeFromParamAndReturnType(params: Variable[], returnType: Type): FunctionType {

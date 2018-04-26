@@ -11,7 +11,7 @@ export function visitExpressionForCapturedVars(
 
     const visitExpressionPreservingTypeEnvs
         = (n: ts.Node) => visitExpressionForCapturedVars(n, outerScope, currentScope);
-    if (ts.isStringLiteral(node) || ts.isNumericLiteral(node)) {
+    if (!node || ts.isStringLiteral(node) || ts.isNumericLiteral(node)) {
         return [];
     } else if (ts.isIdentifier(node)) {
         if (find(currentScope, Variable.nameMatcher(node.text))) {
