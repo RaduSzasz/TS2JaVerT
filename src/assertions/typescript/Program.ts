@@ -10,8 +10,8 @@ export class Program {
     private program: ts.Program;
     private sourceFileNode: ts.SourceFile;
 
-    private classes: { [className: string]: Class };
-    private interfaces: { [interfaceName: string]: Interface };
+    private classes: { [className: string]: Class } = {};
+    private interfaces: { [interfaceName: string]: Interface } = {};
     private gamma: Variable[];
 
     constructor(fileName: string, options?: ts.CompilerOptions) {
@@ -22,53 +22,13 @@ export class Program {
             throw new Error("Only handling programs with one source file");
         }
         this.sourceFileNode = sourceFiles[0];
-    }
-
-    public findAllClasses() {
-        this.classes = {};
-        this.interfaces = {};
-        this.sourceFileNode.statements
-            .map((statement) => {
-                if (ts.isClassDeclaration(statement)) {
-                    const classFound = new Class(statement, this.program.getTypeChecker());
-                    this.classes[classFound.getName()] = classFound;
-                } else if (ts.isInterfaceDeclaration(statement)) {
-                    const interfaceFound = new Interface(statement, this.program.getTypeChecker());
-                    this.interfaces[interfaceFound.getName()] = interfaceFound;
-                }
-            });
-    }
-
-    public determineGamma() {
-        const typeChecker = this.program.getTypeChecker();
         this.gamma = flatten(
             this.sourceFileNode.statements
-                    .map((statement) => visitStatementToFindDeclaredVars(statement, typeChecker)),
+                    .map((statement) => visitStatementToFindDeclaredVars(statement, this.program)),
         );
-    }
 
-    public determineCapturedVars(): void {
-        if (this.gamma === undefined || this.gamma === null) {
-            throw new Error("Can not determine captured vars before establishing gamma contents");
-        }
-        const typeChecker = this.program.getTypeChecker();
-        this.sourceFileNode.statements
-            .forEach((statement) => visitStatementToFindCapturedVars(
-                statement,
-                typeChecker,
-                [],
-                this.gamma),
-            );
-    }
-
-    public placeAssertions(): void {
-        const checker = this.program.getTypeChecker();
-        this.sourceFileNode.statements
-            = ts.createNodeArray(this.sourceFileNode.statements.map((statement) => {
-                if (!ts.isFunctionDeclaration(statement)) {
-                    return statement;
-                }
-            }));
+        this.findAllClassesAndInterfaces();
+        this.determineCapturedVars();
     }
 
     public print(): void {
@@ -82,6 +42,29 @@ export class Program {
                     this.addFunctionSpec,
                 ],
             });
+    }
+
+    private findAllClassesAndInterfaces() {
+        this.sourceFileNode.statements
+            .map((statement) => {
+                if (ts.isClassDeclaration(statement)) {
+                    const classFound = new Class(statement, this.program);
+                    this.classes[classFound.getName()] = classFound;
+                } else if (ts.isInterfaceDeclaration(statement)) {
+                    const interfaceFound = new Interface(statement, this.program);
+                    this.interfaces[interfaceFound.getName()] = interfaceFound;
+                }
+            });
+    }
+
+    private determineCapturedVars(): void {
+        this.sourceFileNode.statements
+            .forEach((statement) => visitStatementToFindCapturedVars(
+                statement,
+                this.program,
+                [],
+                this.gamma),
+            );
     }
 
     private addFunctionSpec = (context: ts.TransformationContext): ts.Transformer<ts.SourceFile> => {

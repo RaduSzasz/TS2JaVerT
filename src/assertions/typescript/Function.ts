@@ -8,14 +8,15 @@ import { Variable } from "./Variable";
 
 export class Function extends Variable {
 
-    public static fromFunctionDeclaration(node: ts.FunctionDeclaration, checker: ts.TypeChecker): Function {
+    public static fromFunctionDeclaration(node: ts.FunctionDeclaration, program: ts.Program): Function {
+        const checker = program.getTypeChecker();
         const signature = checker.getSignatureFromDeclaration(node);
         const name = checker.getSymbolAtLocation(node.name).name;
         const tsReturnType: ts.Type = checker.getReturnTypeOfSignature(signature);
-        const returnType = typeFromTSType(tsReturnType, checker);
+        const returnType = typeFromTSType(tsReturnType, program);
         const params: Variable[] = signature
             .getParameters()
-            .map((param) => Variable.fromTsSymbol(param, checker));
+            .map((param) => Variable.fromTsSymbol(param, program));
 
         return new Function(returnType, params, name);
     }

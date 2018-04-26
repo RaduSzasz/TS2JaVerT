@@ -10,11 +10,12 @@ export class Class {
     private methods: Function[] = [];
     private properties: Variable[] = [];
 
-    constructor(node: ts.ClassDeclaration, checker: ts.TypeChecker) {
+    constructor(node: ts.ClassDeclaration, program: ts.Program) {
         if (!node.name) {
             throw new Error("Only named class declarations are supported");
         }
 
+        const checker = program.getTypeChecker();
         const classSymbol = checker.getSymbolAtLocation(node.name);
         if (classSymbol) { // TODO: When is this false?
             const constructorType = checker.getTypeOfSymbolAtLocation(classSymbol, classSymbol.valueDeclaration);
@@ -45,7 +46,7 @@ export class Class {
             } else if (ts.isMethodDeclaration(member)) {
                 // TODO: What should we do about methods? They are similar to Function. Can we reuse?
             } else if (ts.isPropertyDeclaration(member)) {
-                this.properties.push(Variable.fromPropertyDeclaration(member, checker));
+                this.properties.push(Variable.fromPropertyDeclaration(member, program));
             } else {
                 throw new UnexpectedASTNode(node, member);
             }

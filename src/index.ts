@@ -6,7 +6,4 @@ const args = yargs
     .argv;
 
 const program = new Program(args.input);
-program.determineGamma();
-program.findAllClasses();
-program.determineCapturedVars();
 program.print();

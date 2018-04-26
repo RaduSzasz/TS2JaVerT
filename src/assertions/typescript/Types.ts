@@ -68,7 +68,7 @@ export interface UnionType extends Type {
     types: Type[];
 }
 
-export function typeFromTSType(tsType: ts.Type, checker: ts.TypeChecker): Type {
+export function typeFromTSType(tsType: ts.Type, program: ts.Program): Type {
     switch (tsType.flags) {
         case ts.TypeFlags.Number:
             return { typeFlag: TypeFlags.Number };
@@ -80,7 +80,7 @@ export function typeFromTSType(tsType: ts.Type, checker: ts.TypeChecker): Type {
         case ts.TypeFlags.Object:
             const symbol = tsType.symbol;
             if (symbol.flags === ts.SymbolFlags.TypeLiteral) {
-                const objectLiteralType = new ObjectLiteral(symbol.members, checker);
+                const objectLiteralType = new ObjectLiteral(symbol.members, program);
                 return {
                     objectLiteralType,
                     typeFlag: TypeFlags.ObjectLiteralType,

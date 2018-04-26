@@ -9,40 +9,32 @@ export interface FunctionBodyVariableUsage {
     varsDeclared: string[];
 }
 
-export function reduceVariableUsages(usages: FunctionBodyVariableUsage[]): FunctionBodyVariableUsage {
-    return usages.reduce((prev: FunctionBodyVariableUsage, curr: FunctionBodyVariableUsage) => {
-            return {
-                varsDeclared: uniq([...prev.varsDeclared, ...curr.varsDeclared]),
-                varsUsed: uniq([...prev.varsUsed, ...curr.varsUsed]),
-            };
-        });
-}
-
 export function getCapturedVarsNames(usage: FunctionBodyVariableUsage): string[] {
     return difference(usage.varsUsed, usage.varsDeclared);
 }
 
-export function visitStatementToFindDeclaredVars(node: ts.Node, checker: ts.TypeChecker): Variable[] {
+export function visitStatementToFindDeclaredVars(node: ts.Node, program: ts.Program): Variable[] {
+    const checker = program.getTypeChecker();
     if (!node || ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node) || ts.isReturnStatement(node)) {
         return [];
     } else if (ts.isVariableStatement(node)) {
-        return visitStatementToFindDeclaredVars(node.declarationList, checker);
+        return visitStatementToFindDeclaredVars(node.declarationList, program);
     } else if (ts.isVariableDeclarationList(node)) {
         return flatten(
-            node.declarations.map((declaration) => visitStatementToFindDeclaredVars(declaration, checker)),
+            node.declarations.map((declaration) => visitStatementToFindDeclaredVars(declaration, program)),
         );
     } else if (ts.isVariableDeclaration(node)) {
         const declaredSymbol = checker.getSymbolAtLocation(node.name);
-        return [Variable.fromTsSymbol(declaredSymbol, checker)];
+        return [Variable.fromTsSymbol(declaredSymbol, program)];
     } else if (ts.isFunctionDeclaration(node)) {
-        return [Function.fromFunctionDeclaration(node, checker)];
+        return [Function.fromFunctionDeclaration(node, program)];
     } else if (ts.isIfStatement(node)) {
         return [
-            ...visitStatementToFindDeclaredVars(node.thenStatement, checker),
-            ...visitStatementToFindDeclaredVars(node.elseStatement, checker),
+            ...visitStatementToFindDeclaredVars(node.thenStatement, program),
+            ...visitStatementToFindDeclaredVars(node.elseStatement, program),
         ];
     } else if (ts.isWhileStatement(node)) {
-        return visitStatementToFindDeclaredVars(node.statement, checker);
+        return visitStatementToFindDeclaredVars(node.statement, program);
     } else {
         throw new Error(`Unexpected node type ${node.kind} when looking for declared vars`);
     }
@@ -50,10 +42,11 @@ export function visitStatementToFindDeclaredVars(node: ts.Node, checker: ts.Type
 
 export function visitStatementToFindCapturedVars(
     node: ts.Node,
-    checker: ts.TypeChecker,
+    program: ts.Program,
     outerScope: Variable[],
     currentScope: Variable[]): Variable[] {
-    const visitStatement = (n: ts.Node) => visitStatementToFindCapturedVars(n, checker, outerScope, currentScope);
+    const checker = program.getTypeChecker();
+    const visitStatement = (n: ts.Node) => visitStatementToFindCapturedVars(n, program, outerScope, currentScope);
     if (!node || ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node)) {
         // TODO: Classes can contain captured vars. It's not good practice, but it is possible.
         return [];
@@ -74,7 +67,7 @@ export function visitStatementToFindCapturedVars(
         }
         const funcStatements = node.body.statements;
         const declaredWithinFunc: Variable[] = flatten(
-            funcStatements.map((statement) => visitStatementToFindDeclaredVars(statement, checker)),
+            funcStatements.map((statement) => visitStatementToFindDeclaredVars(statement, program)),
         );
         // TODO: Consider this should perhaps be a method on functions
         const withinFuncOuterScope = [...outerScope, ...currentScope];
@@ -82,7 +75,7 @@ export function visitStatementToFindCapturedVars(
         const capturedVars: Variable[] = uniq(flatten(
             funcStatements.map((statement) => visitStatementToFindCapturedVars(
                 statement,
-                checker,
+                program,
                 withinFuncOuterScope,
                 withinFuncCurrScope,
             ))));

@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import uuid = require("uuid");
 import { Assertion } from "../Assertion";
 import { CustomPredicate } from "../predicates/CustomPredicate";
 import { Emp } from "../predicates/Emp";
@@ -17,24 +18,25 @@ import {
     TypeFlags,
     typeFromTSType,
 } from "./Types";
-import uuid = require("uuid");
 
 export class Variable {
-    public static fromTsSymbol(symbol: ts.Symbol, checker: ts.TypeChecker): Variable {
+    public static fromTsSymbol(symbol: ts.Symbol, program: ts.Program): Variable {
         const name = symbol.getName();
+        const checker = program.getTypeChecker();
         const type = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration);
 
-        return new Variable(name, typeFromTSType(type, checker));
+        return new Variable(name, typeFromTSType(type, program));
     }
 
     public static fromPropertyDeclaration(
         propertyDeclaration: ts.PropertyDeclaration,
-        checker: ts.TypeChecker,
+        program: ts.Program,
     ): Variable {
+        const checker = program.getTypeChecker();
         const propertyType: ts.Type = checker.getTypeAtLocation(propertyDeclaration);
         const nameSymbol = checker.getSymbolAtLocation(propertyDeclaration.name);
 
-        return new Variable(nameSymbol.name, typeFromTSType(propertyType, checker));
+        return new Variable(nameSymbol.name, typeFromTSType(propertyType, program));
     }
 
     public static newReturnVariable(type: Type): Variable {
