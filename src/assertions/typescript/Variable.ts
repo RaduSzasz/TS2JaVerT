@@ -1,13 +1,22 @@
 import * as ts from "typescript";
 import { Assertion } from "../Assertion";
+import { CustomPredicate } from "../predicates/CustomPredicate";
 import { Emp } from "../predicates/Emp";
 import { ScopePredicate } from "../predicates/ScopePredicate";
 import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
 import { True } from "../predicates/True";
 import { TypesPredicate } from "../predicates/TypesPredicate";
+import { Class } from "./Class";
 import { Function } from "./Function";
 import { Interface } from "./Interface";
-import { Class, isAnyType, isPrimitiveType, Type, TypeFlags, typeFromTSType } from "./Types";
+import {
+    isAnyType,
+    isInterfaceType,
+    isPrimitiveType,
+    Type,
+    TypeFlags,
+    typeFromTSType
+} from "./Types";
 
 export class Variable {
     public static fromTsSymbol(symbol: ts.Symbol, checker: ts.TypeChecker): Variable {
@@ -59,6 +68,8 @@ export class Variable {
             return new TypesPredicate(name, type.typeFlag);
         } else if (isAnyType(type)) {
             return new True();
+        } else if (isInterfaceType(type)) {
+            return new CustomPredicate(type.name, name);
         }
     }
 

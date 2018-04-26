@@ -4,7 +4,7 @@ import { UnexpectedASTNode } from "./exceptions/UnexpectedASTNode";
 import { Variable } from "./Variable";
 
 export class Class {
-    private name: string;
+    public readonly name: string;
     private inheritingClassName: string;
     private inheritingFrom: Class;
     private methods: Function[] = [];
