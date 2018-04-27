@@ -9,10 +9,14 @@ import { Variable } from "./Variable";
 
 export class Function extends Variable {
 
-    public static fromFunctionDeclaration(node: ts.FunctionDeclaration, program: Program): Function {
+    public static fromTSNode(
+        node: ts.FunctionDeclaration | ts.FunctionExpression,
+        program: Program,
+        name?: string,
+    ): Function {
         const checker = program.getTypeChecker();
         const signature = checker.getSignatureFromDeclaration(node);
-        const name = checker.getSymbolAtLocation(node.name).name;
+        name = name || checker.getSymbolAtLocation(node.name).name;
         const tsReturnType: ts.Type = checker.getReturnTypeOfSignature(signature);
         const returnType = typeFromTSType(tsReturnType, program);
         const params: Variable[] = signature

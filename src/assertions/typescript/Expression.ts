@@ -1,16 +1,19 @@
 import { find, flatten, uniq } from "lodash";
 import * as ts from "typescript";
-
+import { Function } from "./Function";
+import { Program } from "./Program";
+import { visitStatementToFindCapturedVars, visitStatementToFindDeclaredVars } from "./Statement";
 import { Variable } from "./Variable";
 
 export function visitExpressionForCapturedVars(
     node: ts.Node,
     outerScope: Variable[],
     currentScope: Variable[],
+    program: Program,
 ): Variable[] {
 
     const visitExpressionPreservingTypeEnvs
-        = (n: ts.Node) => visitExpressionForCapturedVars(n, outerScope, currentScope);
+        = (n: ts.Node) => visitExpressionForCapturedVars(n, outerScope, currentScope, program);
     if (!node || ts.isStringLiteral(node) || ts.isNumericLiteral(node)) {
         return [];
     } else if (ts.isIdentifier(node)) {
@@ -53,6 +56,26 @@ export function visitExpressionForCapturedVars(
             ...visitExpressionPreservingTypeEnvs(node.expression),
             ...flatten(node.arguments.map(visitExpressionPreservingTypeEnvs)),
         ]);
+    } else if (ts.isFunctionExpression(node)) {
+        const func: Function = Function.fromTSNode(node, program, "NameTBD");
+        const funcStatements = node.body.statements;
+
+        const declaredWithinFunc: Variable[] = flatten(
+            funcStatements.map((statement) => visitStatementToFindDeclaredVars(statement, program))
+        );
+
+        const withinFuncOuterScope = [...outerScope, ...currentScope];
+        const withinFuncCurrScope = [...func.getParams(), ...declaredWithinFunc];
+        const capturedVars = uniq(flatten(
+            funcStatements.map((statement) => visitStatementToFindCapturedVars(
+                statement,
+                program,
+                withinFuncOuterScope,
+                withinFuncCurrScope,
+            ))));
+
+        func.setCapturedVars(capturedVars);
+        return capturedVars;
     } else {
         throw new Error(`Node of kind ${node.kind} is not an expected Expression`);
     }

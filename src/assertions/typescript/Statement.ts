@@ -16,7 +16,12 @@ export function getCapturedVarsNames(usage: FunctionBodyVariableUsage): string[]
 
 export function visitStatementToFindDeclaredVars(node: ts.Node, program: Program): Variable[] {
     const checker = program.getTypeChecker();
-    if (!node || ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node) || ts.isReturnStatement(node)) {
+    if (!node ||
+        ts.isClassDeclaration(node) ||
+        ts.isInterfaceDeclaration(node) ||
+        ts.isReturnStatement(node) ||
+        ts.isExpressionStatement(node)
+    ) {
         return [];
     } else if (ts.isVariableStatement(node)) {
         return visitStatementToFindDeclaredVars(node.declarationList, program);
@@ -28,7 +33,7 @@ export function visitStatementToFindDeclaredVars(node: ts.Node, program: Program
         const declaredSymbol = checker.getSymbolAtLocation(node.name);
         return [Variable.fromTsSymbol(declaredSymbol, program)];
     } else if (ts.isFunctionDeclaration(node)) {
-        return [Function.fromFunctionDeclaration(node, program)];
+        return [Function.fromTSNode(node, program)];
     } else if (ts.isIfStatement(node)) {
         return [
             ...visitStatementToFindDeclaredVars(node.thenStatement, program),
@@ -36,9 +41,8 @@ export function visitStatementToFindDeclaredVars(node: ts.Node, program: Program
         ];
     } else if (ts.isWhileStatement(node)) {
         return visitStatementToFindDeclaredVars(node.statement, program);
-    } else {
-        throw new Error(`Unexpected node type ${node.kind} when looking for declared vars`);
     }
+    throw new Error(`Unexpected node type ${node.kind} when looking for declared vars`);
 }
 
 export function visitStatementToFindCapturedVars(
@@ -57,7 +61,7 @@ export function visitStatementToFindCapturedVars(
         return uniq(flatten(node.declarations.map(visitStatement)));
     } else if (ts.isVariableDeclaration(node)) {
         if (node.initializer) {
-            return visitExpressionForCapturedVars(node.initializer, outerScope, currentScope);
+            return visitExpressionForCapturedVars(node.initializer, outerScope, currentScope, program);
         }
     } else if (ts.isFunctionDeclaration(node)) {
         // Current function should be declared in the current scope.
@@ -91,7 +95,9 @@ export function visitStatementToFindCapturedVars(
     } else if (ts.isWhileStatement(node)) {
         return visitStatement(node.statement);
     } else if (ts.isReturnStatement(node)) {
-        return visitExpressionForCapturedVars(node.expression, outerScope, currentScope);
+        return visitExpressionForCapturedVars(node.expression, outerScope, currentScope, program);
+    } else if (ts.isExpressionStatement(node)) {
+        return visitExpressionForCapturedVars(node.expression, outerScope, currentScope, program);
     }
     throw new Error(`Unexpected node type ${node.kind} in visitStatementAndExtractVars`);
 }
