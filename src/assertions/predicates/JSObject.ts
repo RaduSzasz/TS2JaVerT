@@ -5,7 +5,7 @@ export class JSObject implements Assertion {
     constructor(private obj: string, private proto: Variable | "Object.prototype") {}
 
     public toString() {
-        return `JSObject(${this.obj}, ${this.protoToString()}`;
+        return `JSObject(${this.obj}, ${this.protoToString()})`;
     }
 
     private protoToString() {

@@ -53,7 +53,7 @@ export function visitStatementToFindCapturedVars(
     } else if (ts.isVariableStatement(node)) {
         return visitStatement(node.declarationList);
     } else if (ts.isVariableDeclarationList(node)) {
-        uniq(flatten(node.declarations.map(visitStatement)));
+        return uniq(flatten(node.declarations.map(visitStatement)));
     } else if (ts.isVariableDeclaration(node)) {
         if (node.initializer) {
             return visitExpressionForCapturedVars(node.initializer, outerScope, currentScope);
@@ -91,8 +91,6 @@ export function visitStatementToFindCapturedVars(
         return visitStatement(node.statement);
     } else if (ts.isReturnStatement(node)) {
         return visitExpressionForCapturedVars(node.expression, outerScope, currentScope);
-    } else {
-        throw new Error(`Unexpected node type ${node.kind} in visitStatementAndExtractVars`);
     }
-
+    throw new Error(`Unexpected node type ${node.kind} in visitStatementAndExtractVars`);
 }
