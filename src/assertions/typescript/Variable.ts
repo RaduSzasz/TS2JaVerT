@@ -9,7 +9,7 @@ import { True } from "../predicates/True";
 import { TypesPredicate } from "../predicates/TypesPredicate";
 import { Class } from "./Class";
 import { Function } from "./Function";
-import { Interface } from "./Interface";
+import { Program } from "./Program";
 import {
     isAnyType,
     isInterfaceType, isObjectLiteralType,
@@ -20,7 +20,7 @@ import {
 } from "./Types";
 
 export class Variable {
-    public static fromTsSymbol(symbol: ts.Symbol, program: ts.Program): Variable {
+    public static fromTsSymbol(symbol: ts.Symbol, program: Program): Variable {
         const name = symbol.getName();
         const checker = program.getTypeChecker();
         const type = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration);
@@ -30,7 +30,7 @@ export class Variable {
 
     public static fromPropertyDeclaration(
         propertyDeclaration: ts.PropertyDeclaration,
-        program: ts.Program,
+        program: Program,
     ): Variable {
         const checker = program.getTypeChecker();
         const propertyType: ts.Type = checker.getTypeAtLocation(propertyDeclaration);

@@ -1,9 +1,12 @@
 import { find, flatten, map } from "lodash";
 import * as ts from "typescript";
 import { printFunctionSpec } from "../FunctionSpec";
+import { ForbiddenPredicate } from "../predicates/ForbiddenPredicate";
+import { IndexSignaturePredicate } from "../predicates/IndexSignaturePredicate";
 import { Class } from "./Class";
 import { Interface } from "./Interface";
 import { visitStatementToFindCapturedVars, visitStatementToFindDeclaredVars } from "./Statement";
+import { Type } from "./Types";
 import { Variable } from "./Variable";
 
 export class Program {
@@ -12,6 +15,8 @@ export class Program {
 
     private classes: { [className: string]: Class } = {};
     private interfaces: { [interfaceName: string]: Interface } = {};
+    private indexSignatures: { [name: string]: IndexSignaturePredicate } = {};
+    private indexSigCnt = 0;
     private gamma: Variable[];
 
     constructor(fileName: string, options?: ts.CompilerOptions) {
@@ -24,11 +29,22 @@ export class Program {
         this.sourceFileNode = sourceFiles[0];
         this.gamma = flatten(
             this.sourceFileNode.statements
-                    .map((statement) => visitStatementToFindDeclaredVars(statement, this.program)),
+                    .map((statement) => visitStatementToFindDeclaredVars(statement, this)),
         );
 
         this.findAllClassesAndInterfaces();
         this.determineCapturedVars();
+    }
+
+    public getTypeChecker(): ts.TypeChecker {
+        return this.program.getTypeChecker();
+    }
+
+    public addIndexingSignature(type: Type): IndexSignaturePredicate {
+        const name = `IndexSig${this.indexSigCnt++}`;
+        const indexSignature = new IndexSignaturePredicate(name, type);
+        this.indexSignatures[name] = indexSignature;
+        return indexSignature;
     }
 
     public print(): void {
@@ -48,10 +64,10 @@ export class Program {
         this.sourceFileNode.statements
             .map((statement) => {
                 if (ts.isClassDeclaration(statement)) {
-                    const classFound = new Class(statement, this.program);
+                    const classFound = new Class(statement, this);
                     this.classes[classFound.getName()] = classFound;
                 } else if (ts.isInterfaceDeclaration(statement)) {
-                    const interfaceFound = new Interface(statement, this.program);
+                    const interfaceFound = new Interface(statement, this);
                     this.interfaces[interfaceFound.getName()] = interfaceFound;
                 }
             });
@@ -61,7 +77,7 @@ export class Program {
         this.sourceFileNode.statements
             .forEach((statement) => visitStatementToFindCapturedVars(
                 statement,
-                this.program,
+                this,
                 [],
                 this.gamma),
             );
@@ -93,7 +109,11 @@ export class Program {
 
     private addPredicates = (context: ts.TransformationContext): ts.Transformer<ts.SourceFile> => {
         return (src: ts.SourceFile) => {
-            const predicates = map(this.interfaces, (i) => i.toPredicate()).join("\n\n");
+            const predicates = [
+                ForbiddenPredicate.toPredicate(),
+                ...map(this.indexSignatures, (i) => i.toString()),
+                ...map(this.interfaces, (i) => i.toPredicate()),
+            ].join("\n\n");
             src.statements = ts.createNodeArray([
                 ts.addSyntheticLeadingComment(
                     ts.createNotEmittedStatement(src.getFirstToken()),

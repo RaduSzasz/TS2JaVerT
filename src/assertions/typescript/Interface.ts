@@ -1,11 +1,12 @@
 import * as ts from "typescript";
 import { ObjectLiteral } from "./ObjectLiteral";
+import { Program } from "./Program";
 
 export class Interface {
     public readonly name: string;
     private objectLiteral: ObjectLiteral;
 
-    constructor(node: ts.InterfaceDeclaration, program: ts.Program) {
+    constructor(node: ts.InterfaceDeclaration, program: Program) {
         const checker = program.getTypeChecker();
         const interfaceSymbol = checker.getSymbolAtLocation(node.name);
         this.name = interfaceSymbol.name;
@@ -19,8 +20,8 @@ export class Interface {
     public toPredicate(): string {
         const o = "o";
         return `
-            ${this.name}(${o}) :
-                ${this.objectLiteral.toAssertion(o)}
+        ${this.name}(${o}) :
+            ${this.objectLiteral.toAssertion(o)}
 `;
     }
 

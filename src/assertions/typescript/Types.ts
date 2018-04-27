@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import { ObjectLiteral } from "./ObjectLiteral";
+import { Program } from "./Program";
 import {Variable} from "./Variable";
 
 export enum TypeFlags {
@@ -68,7 +69,7 @@ export interface UnionType extends Type {
     types: Type[];
 }
 
-export function typeFromTSType(tsType: ts.Type, program: ts.Program): Type {
+export function typeFromTSType(tsType: ts.Type, program: Program): Type {
     switch (tsType.flags) {
         case ts.TypeFlags.Number:
             return { typeFlag: TypeFlags.Number };

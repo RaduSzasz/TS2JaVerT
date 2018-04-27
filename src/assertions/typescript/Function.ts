@@ -3,12 +3,13 @@ import * as uuid from "uuid";
 import { Assertion } from "../Assertion";
 import { FunctionSpec } from "../FunctionSpec";
 import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
+import { Program } from "./Program";
 import { Type, typeFromParamAndReturnType, typeFromTSType } from "./Types";
 import { Variable } from "./Variable";
 
 export class Function extends Variable {
 
-    public static fromFunctionDeclaration(node: ts.FunctionDeclaration, program: ts.Program): Function {
+    public static fromFunctionDeclaration(node: ts.FunctionDeclaration, program: Program): Function {
         const checker = program.getTypeChecker();
         const signature = checker.getSignatureFromDeclaration(node);
         const name = checker.getSymbolAtLocation(node.name).name;

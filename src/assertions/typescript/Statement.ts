@@ -2,6 +2,7 @@ import { difference, find, flatten, uniq } from "lodash";
 import * as ts from "typescript";
 import { visitExpressionForCapturedVars } from "./Expression";
 import { Function } from "./Function";
+import { Program } from "./Program";
 import {Variable} from "./Variable";
 
 export interface FunctionBodyVariableUsage {
@@ -13,7 +14,7 @@ export function getCapturedVarsNames(usage: FunctionBodyVariableUsage): string[]
     return difference(usage.varsUsed, usage.varsDeclared);
 }
 
-export function visitStatementToFindDeclaredVars(node: ts.Node, program: ts.Program): Variable[] {
+export function visitStatementToFindDeclaredVars(node: ts.Node, program: Program): Variable[] {
     const checker = program.getTypeChecker();
     if (!node || ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node) || ts.isReturnStatement(node)) {
         return [];
@@ -42,7 +43,7 @@ export function visitStatementToFindDeclaredVars(node: ts.Node, program: ts.Prog
 
 export function visitStatementToFindCapturedVars(
     node: ts.Node,
-    program: ts.Program,
+    program: Program,
     outerScope: Variable[],
     currentScope: Variable[]): Variable[] {
     const checker = program.getTypeChecker();

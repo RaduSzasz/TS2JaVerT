@@ -1,10 +1,13 @@
+import { compact } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../Assertion";
 import { DataProp } from "../predicates/DataProp";
 import { FunctionObject } from "../predicates/FunctionObject";
+import { IndexSignaturePredicate } from "../predicates/IndexSignaturePredicate";
 import { JSObject } from "../predicates/JSObject";
 import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
-import { Type, typeFromTSType } from "./Types";
+import { Program } from "./Program";
+import { typeFromTSType } from "./Types";
 import { Variable } from "./Variable";
 
 enum ObjectType {
@@ -19,10 +22,10 @@ export class ObjectLiteral {
     private static readonly INDEX_SIGNATURE_NAME = "__index";
 
     private objectType: ObjectType;
-    private indexingType: Type;
+    private indexSignature: IndexSignaturePredicate;
     private regularFields: Variable[] = [];
 
-    constructor(members: ts.SymbolTable, program: ts.Program) {
+    constructor(members: ts.SymbolTable, program: Program) {
         const checker = program.getTypeChecker();
         this.objectType = ObjectType.RegularObject;
         members.forEach(((value: ts.Symbol, key: ts.__String) => {
@@ -34,8 +37,9 @@ export class ObjectLiteral {
                 if (value.declarations.length !== 1) {
                     throw new Error("More than one indexing signature declaration.");
                 }
-                [this.indexingType] = value.declarations.map((declaration: ts.IndexSignatureDeclaration) =>
+                const [indexingType] = value.declarations.map((declaration: ts.IndexSignatureDeclaration) =>
                         typeFromTSType(checker.getTypeFromTypeNode(declaration.type), program));
+                this.indexSignature = program.addIndexingSignature(indexingType);
             } else {
                 this.regularFields.push(Variable.fromTsSymbol(value, program));
             }
@@ -44,16 +48,17 @@ export class ObjectLiteral {
 
     public toAssertion(o: string): Assertion {
         // The type of o is irrelevant; we will never use it
-        return new SeparatingConjunctionList([
+        return new SeparatingConjunctionList(compact([
             this.getObjectAssertion(o),
+            this.indexSignature && this.indexSignature.toAssertion(o, "hasOwnProperty"),
             ...this.regularFields.map((field: Variable) => {
                 const logicalVariable = Variable.logicalVariableFromVariable(field);
                 return new SeparatingConjunctionList([
-                    new DataProp(o, field, logicalVariable),
+                    new DataProp(o, field.name, logicalVariable),
                     logicalVariable.toAssertion(),
                 ]);
             }),
-        ]);
+        ]));
     }
 
     private getObjectAssertion(o: string): Assertion {

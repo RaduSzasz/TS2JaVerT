@@ -1,6 +1,7 @@
 import { find } from "lodash";
 import * as ts from "typescript";
 import { UnexpectedASTNode } from "./exceptions/UnexpectedASTNode";
+import { Program } from "./Program";
 import { Variable } from "./Variable";
 
 export class Class {
@@ -10,7 +11,7 @@ export class Class {
     private methods: Function[] = [];
     private properties: Variable[] = [];
 
-    constructor(node: ts.ClassDeclaration, program: ts.Program) {
+    constructor(node: ts.ClassDeclaration, program: Program) {
         if (!node.name) {
             throw new Error("Only named class declarations are supported");
         }
