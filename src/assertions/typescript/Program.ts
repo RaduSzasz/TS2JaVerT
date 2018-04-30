@@ -4,6 +4,7 @@ import { printFunctionSpec } from "../FunctionSpec";
 import { ForbiddenPredicate } from "../predicates/ForbiddenPredicate";
 import { IndexSignaturePredicate } from "../predicates/IndexSignaturePredicate";
 import { Class } from "./Class";
+import { Function } from "./Function";
 import { Interface } from "./Interface";
 import { visitStatementToFindCapturedVars, visitStatementToFindDeclaredVars } from "./Statement";
 import { Type } from "./Types";
@@ -16,6 +17,7 @@ export class Program {
     private classes: { [className: string]: Class } = {};
     private interfaces: { [interfaceName: string]: Interface } = {};
     private indexSignatures: { [name: string]: IndexSignaturePredicate } = {};
+    private functions: { [nodePos: number]: Function } = {};
     private indexSigCnt = 0;
     private gamma: Variable[];
 
@@ -38,6 +40,11 @@ export class Program {
 
     public getTypeChecker(): ts.TypeChecker {
         return this.program.getTypeChecker();
+    }
+
+    public addFunction(node: ts.Node, func: Function): void {
+        this.functions[node.pos] = func;
+        // this.functions.push({ node, func });
     }
 
     public addIndexingSignature(type: Type): IndexSignaturePredicate {
@@ -98,6 +105,13 @@ export class Program {
                         node,
                         ts.SyntaxKind.MultiLineCommentTrivia,
                         printFunctionSpec(funcVar.generateAssertion()),
+                        true,
+                    );
+                } else if (this.functions[node.pos]) {
+                    return ts.addSyntheticLeadingComment(
+                        node,
+                        ts.SyntaxKind.MultiLineCommentTrivia,
+                        printFunctionSpec(this.functions[node.pos].generateAssertion()),
                         true,
                     );
                 }

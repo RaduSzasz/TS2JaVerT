@@ -13,7 +13,7 @@ describe("A suite for checking if we find identifiers in expressions", () => {
                 expect(sourceFile.fileName).toBe(sourceFileName);
                 sourceFile.forEachChild(child => {
                     if (ts.isFunctionDeclaration(child)) {
-                        const analyzedFunction = Function.fromFunctionDeclaration(child, checker);
+                        const analyzedFunction = Function.fromTSNode(child, checker);
                         expect(analyzedFunction).toBeTruthy();
                         expect(analyzedFunction.getReturnType()).toEqual({ type: TypeFlags.Number });
                     }

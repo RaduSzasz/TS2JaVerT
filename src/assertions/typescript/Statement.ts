@@ -61,7 +61,16 @@ export function visitStatementToFindCapturedVars(
         return uniq(flatten(node.declarations.map(visitStatement)));
     } else if (ts.isVariableDeclaration(node)) {
         if (node.initializer) {
-            return visitExpressionForCapturedVars(node.initializer, outerScope, currentScope, program);
+            const expressionAnalysis =
+                visitExpressionForCapturedVars(node.initializer, outerScope, currentScope, program);
+            if (expressionAnalysis.funcDef) {
+                const varStatement = node.parent.parent;
+                if (!ts.isVariableStatement(varStatement)) {
+                    throw new Error("Parent of variable declaration is not variable statement");
+                }
+                program.addFunction(varStatement, expressionAnalysis.funcDef);
+            }
+            return expressionAnalysis.capturedVars;
         }
     } else if (ts.isFunctionDeclaration(node)) {
         // Current function should be declared in the current scope.
@@ -95,9 +104,9 @@ export function visitStatementToFindCapturedVars(
     } else if (ts.isWhileStatement(node)) {
         return visitStatement(node.statement);
     } else if (ts.isReturnStatement(node)) {
-        return visitExpressionForCapturedVars(node.expression, outerScope, currentScope, program);
+        return visitExpressionForCapturedVars(node.expression, outerScope, currentScope, program).capturedVars;
     } else if (ts.isExpressionStatement(node)) {
-        return visitExpressionForCapturedVars(node.expression, outerScope, currentScope, program);
+        return visitExpressionForCapturedVars(node.expression, outerScope, currentScope, program).capturedVars;
     }
     throw new Error(`Unexpected node type ${node.kind} in visitStatementAndExtractVars`);
 }
