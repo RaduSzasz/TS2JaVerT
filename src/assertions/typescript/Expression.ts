@@ -1,4 +1,4 @@
-import { find, flatten, uniq } from "lodash";
+import { difference, find, flatten, uniq } from "lodash";
 import * as ts from "typescript";
 import { Function } from "./Function";
 import { Program } from "./Program";
@@ -98,7 +98,7 @@ export function visitExpressionForCapturedVars(
 
         func.setCapturedVars(capturedVars);
         return {
-            capturedVars,
+            capturedVars: difference(capturedVars, currentScope),
             funcDef: func,
         };
     } else {

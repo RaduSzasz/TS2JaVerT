@@ -96,7 +96,7 @@ export function visitStatementToFindCapturedVars(
 
         functionVar.setCapturedVars(capturedVars);
         program.addFunction(node, functionVar);
-        return capturedVars;
+        return difference(capturedVars, currentScope);
     } else if (ts.isIfStatement(node)) {
         return uniq(flatten([
             ...visitStatement(node.thenStatement),
