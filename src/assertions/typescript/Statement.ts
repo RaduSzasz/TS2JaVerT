@@ -95,6 +95,7 @@ export function visitStatementToFindCapturedVars(
             ))));
 
         functionVar.setCapturedVars(capturedVars);
+        program.addFunction(node, functionVar);
         return capturedVars;
     } else if (ts.isIfStatement(node)) {
         return uniq(flatten([
