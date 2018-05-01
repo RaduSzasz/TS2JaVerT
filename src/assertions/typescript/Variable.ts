@@ -84,7 +84,7 @@ export class Variable {
     public toAssertionExtractingScope(): Assertion {
         const logicalVariable = Variable.logicalVariableFromVariable(this);
         return new SeparatingConjunctionList([
-            new ScopePredicate(this, logicalVariable),
+            new ScopePredicate(this.name, logicalVariable.name),
             logicalVariable.toAssertion(),
         ]);
     }

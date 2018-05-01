@@ -44,7 +44,10 @@ export class Program {
 
     public addFunction(node: ts.Node, func: Function): void {
         this.functions[node.pos] = func;
-        // this.functions.push({ node, func });
+    }
+
+    public getFunctions(): Function[] {
+        return map(this.functions, (val: Function) => val);
     }
 
     public addIndexingSignature(type: Type): IndexSignaturePredicate {

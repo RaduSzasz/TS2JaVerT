@@ -1,10 +1,9 @@
 import { Assertion } from "../Assertion";
-import { Variable } from "../typescript/Variable";
 
 export class ScopePredicate implements Assertion {
-    constructor(private variable: Variable, private logicalVariable: Variable) { }
+    constructor(private variable: string, private logicalVariable: string) { }
 
     public toString(): string {
-        return `Scope(${this.variable.name}, ${this.logicalVariable.name})`;
+        return `Scope(${this.variable}, ${this.logicalVariable})`;
     }
 }
