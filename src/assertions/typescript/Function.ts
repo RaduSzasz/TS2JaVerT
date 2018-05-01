@@ -10,7 +10,7 @@ import { Variable } from "./Variable";
 export class Function extends Variable {
 
     public static fromTSNode(
-        node: ts.FunctionDeclaration | ts.FunctionExpression,
+        node: ts.FunctionDeclaration | ts.FunctionExpression | ts.MethodDeclaration,
         program: Program,
         name?: string,
     ): Function {

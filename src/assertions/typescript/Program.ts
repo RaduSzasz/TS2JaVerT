@@ -81,6 +81,8 @@ export class Program {
                     this.interfaces[interfaceFound.getName()] = interfaceFound;
                 }
             });
+        Class.resolveParents(this.classes);
+        Class.resolveAncestorsAndDescendents(this.classes);
     }
 
     private determineCapturedVars(): void {
