@@ -3,6 +3,7 @@ import * as ts from "typescript";
 import * as uuid from "uuid";
 import { Assertion } from "../Assertion";
 import { FunctionSpec } from "../FunctionSpec";
+import { FunctionObject } from "../predicates/FunctionObject";
 import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
 import { Class } from "./Class";
 import { Program } from "./Program";
@@ -10,6 +11,9 @@ import { ClassType, isClassType, Type, typeFromParamAndReturnType, typeFromTSTyp
 import { Variable } from "./Variable";
 
 export class Function extends Variable {
+    public static logicalVariableFromFunction(func: Function): Function {
+        return new Function(func.returnType, func.params, `#${func.name}`);
+    }
 
     public static fromTSNode(
         node: ts.FunctionDeclaration | ts.FunctionExpression | ts.MethodDeclaration,
@@ -68,6 +72,10 @@ export class Function extends Variable {
             pre,
             uuid: uuid.v4(),
         };
+    }
+
+    public toAssertion(): Assertion {
+        return new FunctionObject(this.name);
     }
 
     private generatePreCondition(): Assertion {

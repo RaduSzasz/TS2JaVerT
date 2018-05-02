@@ -25,6 +25,7 @@ export class Class {
         }
 
         map(classMap, (classVar) => {
+            classVar.fPlus = classVar.determineFPlus();
             classVar.nPlus = classVar.determineNPlus();
         });
     }
@@ -39,6 +40,7 @@ export class Class {
     public readonly name: string;
     private inheritingClassName: string;
 
+    private fPlus: string[];
     private nPlus: string[];
     private inheritingFrom: Class;
     private methods: Function[] = [];
@@ -88,11 +90,28 @@ export class Class {
         });
     }
 
-    public getProtoPredicate(): Assertion {
-        return undefined;
+    public getProtoPredicate(): string {
+        const currProto = "proto";
+        const parentProto = this.inheritingFrom ? "parentProto" : "Object.prototype";
+        const predDef = `${this.getProtoPredicateName()}(${this.inheritingFrom ?
+            [currProto, parentProto].join(", ") :
+            currProto
+        })`;
+        const predicate = new SeparatingConjunctionList([
+            new JSObject(currProto, parentProto),
+            ...this.fPlus.map((field) => new NonePredicate(currProto, field)),
+            ...this.methods.map((method) => new SeparatingConjunctionList([
+                new DataProp(currProto, method.getName(), Variable.logicalVariableFromVariable(method)),
+                Function.logicalVariableFromFunction(method).toAssertion(),
+            ])),
+        ]);
+        return `
+        ${predDef}:
+            ${predicate.toString()}
+`;
     }
 
-    public getInstancePredicate(): Assertion {
+    public getInstancePredicate(): string {
         const o = "o";
         const proto = "proto";
         return `

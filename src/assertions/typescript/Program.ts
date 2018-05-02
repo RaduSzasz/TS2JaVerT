@@ -1,4 +1,4 @@
-import { flatten, map } from "lodash";
+import { flatMap, flatten, map } from "lodash";
 import * as ts from "typescript";
 import { printFunctionSpec } from "../FunctionSpec";
 import { ForbiddenPredicate } from "../predicates/ForbiddenPredicate";
@@ -174,7 +174,7 @@ export class Program {
                 ForbiddenPredicate.toPredicate(),
                 ...map(this.indexSignatures, (i) => i.toString()),
                 ...map(this.interfaces, (i) => i.toPredicate()),
-                ...map(this.classes, (cls) => cls.getInstancePredicate()),
+                ...flatMap(this.classes, (cls) => [cls.getInstancePredicate(), cls.getProtoPredicate()]),
             ].join("\n\n");
             const commentedNode = ts.addSyntheticLeadingComment(
                 ts.createNotEmittedStatement(undefined),
