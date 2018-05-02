@@ -1,4 +1,4 @@
-import { find, flatten, map } from "lodash";
+import { flatten, map } from "lodash";
 import * as ts from "typescript";
 import { printFunctionSpec } from "../FunctionSpec";
 import { ForbiddenPredicate } from "../predicates/ForbiddenPredicate";
@@ -29,12 +29,13 @@ export class Program {
             throw new Error("Only handling programs with one source file");
         }
         this.sourceFileNode = sourceFiles[0];
+        this.findAllClassesAndInterfaces();
+
         this.gamma = flatten(
             this.sourceFileNode.statements
                     .map((statement) => visitStatementToFindDeclaredVars(statement, this)),
         );
 
-        this.findAllClassesAndInterfaces();
         this.determineCapturedVars();
     }
 
@@ -48,6 +49,13 @@ export class Program {
 
     public getFunctions(): Function[] {
         return map(this.functions, (val: Function) => val);
+    }
+
+    public getClass(className: string): Class {
+        if (this.classes.hasOwnProperty(className)) {
+            return this.classes[className];
+        }
+        throw new Error(`No such class ${className}`);
     }
 
     public addIndexingSignature(type: Type): IndexSignaturePredicate {

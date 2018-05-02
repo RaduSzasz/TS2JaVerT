@@ -11,7 +11,7 @@ import { Class } from "./Class";
 import { Function } from "./Function";
 import { Program } from "./Program";
 import {
-    isAnyType,
+    isAnyType, isClassType,
     isInterfaceType, isObjectLiteralType,
     isPrimitiveType,
     Type,
@@ -57,10 +57,14 @@ export class Variable {
         return (variable: Variable) => variable.name === name;
     }
 
-    constructor(public name: string, protected type: Type) { }
+    constructor(public name: string, protected readonly type: Type) { }
 
     public isFunction(): this is Function {
         return false;
+    }
+
+    public getType(): Type {
+        return this.type;
     }
 
     public toAssertion(): Assertion {
@@ -76,6 +80,8 @@ export class Variable {
             return new CustomPredicate(type.name, name);
         } else if (isObjectLiteralType(type)) {
             return type.objectLiteralType.toAssertion(name);
+        } else if (isClassType(type)) {
+            return type.cls.getAssertion(name);
         }
 
         throw new Error(`Can not convert type ${this.type.typeFlag} to assertion`);

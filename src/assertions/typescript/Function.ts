@@ -1,10 +1,12 @@
+import { chain } from "lodash";
 import * as ts from "typescript";
 import * as uuid from "uuid";
 import { Assertion } from "../Assertion";
 import { FunctionSpec } from "../FunctionSpec";
 import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
+import { Class } from "./Class";
 import { Program } from "./Program";
-import { Type, typeFromParamAndReturnType, typeFromTSType } from "./Types";
+import { ClassType, isClassType, Type, typeFromParamAndReturnType, typeFromTSType } from "./Types";
 import { Variable } from "./Variable";
 
 export class Function extends Variable {
@@ -69,12 +71,23 @@ export class Function extends Variable {
     }
 
     private generatePreCondition(): Assertion {
+        const allAncestors: Class[] = chain([...this.params, ...this.capturedVars])
+            .map((assertionVar) => assertionVar.getType())
+            .filter((type) => isClassType(type))
+            .map((classType: ClassType) => classType.cls)
+            .thru((classes) => Class.getAllAncestors(classes))
+            .value();
         const paramAssertions: Assertion[] = this.params.map((param) => param.toAssertion());
         const capturedVariableAssertions: Assertion[]
             = this.capturedVars
                     .map((capturedVar) => capturedVar.toAssertionExtractingScope());
+        const classProtoAssertions: Assertion[] = allAncestors.map((cls) => cls.getProtoAssertion());
 
-        return new SeparatingConjunctionList([...paramAssertions, ...capturedVariableAssertions]);
+        return new SeparatingConjunctionList([
+            ...classProtoAssertions,
+            ...paramAssertions,
+            ...capturedVariableAssertions,
+        ]);
     }
 
     private generatePostCondition(pre: Assertion): Assertion {

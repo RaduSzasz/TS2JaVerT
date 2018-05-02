@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { Class } from "./Class";
 import { ObjectLiteral } from "./ObjectLiteral";
 import { Program } from "./Program";
 import {Variable} from "./Variable";
@@ -47,7 +48,10 @@ export function isInterfaceType(type: Type): type is InterfaceType {
 
 export interface ClassType extends Type {
     typeFlag: TypeFlags.Class;
-    name: string;
+    cls: Class;
+}
+export function isClassType(type: Type): type is ClassType {
+    return type.typeFlag === TypeFlags.Class;
 }
 
 export interface ObjectLiteralType extends Type {
@@ -92,7 +96,10 @@ export function typeFromTSType(tsType: ts.Type, program: Program): Type {
                     typeFlag: TypeFlags.Interface,
                 } as InterfaceType;
             } else if (symbol.flags === ts.SymbolFlags.Class) {
-                // TODO: Store class
+                return {
+                    cls: program.getClass(symbol.getName()),
+                    typeFlag: TypeFlags.Class,
+                } as ClassType;
             }
             break;
     }

@@ -1,5 +1,7 @@
-import { find, isEqual, map } from "lodash";
+import { chain, find, isEqual, map } from "lodash";
 import * as ts from "typescript";
+import { Assertion } from "../Assertion";
+import { CustomPredicate } from "../predicates/CustomPredicate";
 import { Function } from "./Function";
 import { Program } from "./Program";
 import { Variable } from "./Variable";
@@ -19,14 +21,21 @@ export class Class {
         }
     }
 
+    public static getAllAncestors(classes: Class[]): Class[] {
+        return chain(classes)
+            .flatMap((cls) => cls.ancestors)
+            .uniq()
+            .value();
+    }
+
     public readonly name: string;
     private inheritingClassName: string;
 
     private inheritingFrom: Class;
     private methods: Function[] = [];
     private properties: Variable[] = [];
-    private ancestors: Class[] = [];
-    private descendants: Class[] = [];
+    private ancestors: Class[] = [this];
+    private descendants: Class[] = [this];
 
     constructor(node: ts.ClassDeclaration, program: Program) {
         if (!node.name) {
@@ -60,7 +69,7 @@ export class Class {
             } else if (ts.isMethodDeclaration(member)) {
                 const symbol = checker.getSymbolAtLocation(member.name);
                 this.methods.push(
-                    Function.fromTSNode(member, program, `${classSymbol.name}.${symbol.getName()}`),
+                    Function.fromTSNode(member, program, symbol.getName()),
                 );
             } else if (ts.isPropertyDeclaration(member)) {
                 this.properties.push(Variable.fromPropertyDeclaration(member, program));
@@ -70,11 +79,51 @@ export class Class {
         });
     }
 
+    public getProtoPredicate(): Assertion {
+        return undefined;
+    }
+
+    public getInstancePredicate(): Assertion {
+        return undefined;
+    }
+
+    public getInstancePredicateName(): string {
+        return this.name;
+    }
+
+    public getProtoPredicateName(): string {
+        return `${this.name}Proto`;
+    }
+
+    public getProtoLogicalVariableName(): string {
+        return `#${this.name}proto`;
+    }
+
+    public getAssertion(instanceName: string): Assertion {
+        const instancePredName = this.getInstancePredicateName();
+        const protoLogicalVariable = this.getProtoLogicalVariableName();
+        return new CustomPredicate(instancePredName, `${instanceName}, ${protoLogicalVariable}`);
+    }
+
+    public getProtoAssertion(): Assertion {
+        const protoPredName = this.getProtoPredicateName();
+        const protoLogicalVariableName = this.getProtoLogicalVariableName();
+        if (this.inheritingFrom) {
+            return new CustomPredicate(
+                protoPredName,
+                `${protoLogicalVariableName}, ${this.inheritingFrom.getProtoLogicalVariableName()}`);
+        }
+        return new CustomPredicate(
+            protoPredName,
+            protoLogicalVariableName,
+        );
+    }
+
     public updateAncestorsAndDescendants(): boolean {
         if (this.inheritingFrom) {
             let didUpdate: boolean = false;
             const inSubtree = [this, ...this.descendants];
-            const above = [this.inheritingFrom, ...this.inheritingFrom.ancestors];
+            const above = [this, ...this.inheritingFrom.ancestors];
             if (!isEqual(this.inheritingFrom.descendants, inSubtree)) {
                 this.inheritingFrom.descendants = inSubtree;
                 didUpdate = true;
@@ -86,6 +135,22 @@ export class Class {
             return didUpdate;
         }
         return false;
+    }
+
+    public determineNPlus(): string[] {
+        return chain([this, ...this.ancestors])
+            .flatMap((cls) => cls.methods)
+            .map((method) => method.name)
+            .uniq()
+            .value();
+    }
+
+    public determineFPlus(): string[] {
+        return chain([this, ...this.descendants])
+            .flatMap((cls) => cls.properties)
+            .map((property) => property.name)
+            .uniq()
+            .value();
     }
 
     public getName(): string {
