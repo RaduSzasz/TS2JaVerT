@@ -66,6 +66,6 @@ export class ObjectLiteral {
             return new FunctionObject(o);
         }
         const protoObject = Variable.protoLogicalVariable();
-        return new JSObject(o, protoObject);
+        return new JSObject(o, protoObject.name);
     }
 }

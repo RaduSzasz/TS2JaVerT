@@ -174,6 +174,7 @@ export class Program {
                 ForbiddenPredicate.toPredicate(),
                 ...map(this.indexSignatures, (i) => i.toString()),
                 ...map(this.interfaces, (i) => i.toPredicate()),
+                ...map(this.classes, (cls) => cls.getInstancePredicate()),
             ].join("\n\n");
             const commentedNode = ts.addSyntheticLeadingComment(
                 ts.createNotEmittedStatement(undefined),

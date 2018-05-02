@@ -2,6 +2,10 @@ import { chain, find, isEqual, map } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../Assertion";
 import { CustomPredicate } from "../predicates/CustomPredicate";
+import { DataProp } from "../predicates/DataProp";
+import { JSObject } from "../predicates/JSObject";
+import { NonePredicate } from "../predicates/NonePredicate";
+import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
 import { Function } from "./Function";
 import { Program } from "./Program";
 import { Variable } from "./Variable";
@@ -19,6 +23,10 @@ export class Class {
         while (map(classMap, (classVar) => classVar.updateAncestorsAndDescendants()).some((val) => val)) {
             // Intentionally blank
         }
+
+        map(classMap, (classVar) => {
+            classVar.nPlus = classVar.determineNPlus();
+        });
     }
 
     public static getAllAncestors(classes: Class[]): Class[] {
@@ -31,6 +39,7 @@ export class Class {
     public readonly name: string;
     private inheritingClassName: string;
 
+    private nPlus: string[];
     private inheritingFrom: Class;
     private methods: Function[] = [];
     private properties: Variable[] = [];
@@ -84,7 +93,19 @@ export class Class {
     }
 
     public getInstancePredicate(): Assertion {
-        return undefined;
+        const o = "o";
+        const proto = "proto";
+        return `
+        ${this.getInstancePredicateName()}(${o}, ${proto}):
+            ${new SeparatingConjunctionList([
+            new JSObject(o, proto),
+            ...this.nPlus.map((namedMethod) => new NonePredicate(o, namedMethod)),
+            ...this.properties.map((prop) => new SeparatingConjunctionList([
+                new DataProp(o, prop.name, Variable.logicalVariableFromVariable(prop)),
+                Variable.logicalVariableFromVariable(prop).toAssertion(),
+            ])),
+        ]).toString()}
+`;
     }
 
     public getInstancePredicateName(): string {
