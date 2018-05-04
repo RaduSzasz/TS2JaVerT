@@ -7,6 +7,7 @@ import { Class } from "./Class";
 import { Function } from "./Function";
 import { Interface } from "./Interface";
 import { visitStatementToFindCapturedVars, visitStatementToFindDeclaredVars } from "./Statement";
+import { createCustomTransformers } from "./transformers/FileContext";
 import { Type } from "./Types";
 import { Variable } from "./Variable";
 
@@ -70,12 +71,13 @@ export class Program {
             undefined,
             undefined,
             undefined,
-            {
+            createCustomTransformers({
                 before: [
                     this.addPredicates,
                     this.addFunctionSpecTopLevel,
                 ],
-            });
+            }),
+        );
     }
 
     private findAllClassesAndInterfaces() {
@@ -103,12 +105,11 @@ export class Program {
             );
     }
 
-    private addFunctionSpec: ts.TransformerFactory<ts.Statement> = (context) => {
-        return (node: ts.Statement) => {
-            if (this.functions[node.pos]) {
-                const funcVar = this.functions[node.pos];
-                if (ts.isFunctionDeclaration(node)) {
-                    return ts.addSyntheticLeadingComment(ts.updateFunctionDeclaration(node,
+    private addFunctionSpecVisitor: ts.Visitor = (node: ts.Node) => {
+        if (this.functions[node.pos]) {
+            const funcVar = this.functions[node.pos];
+            if (ts.isFunctionDeclaration(node)) {
+                return ts.addSyntheticLeadingComment(ts.updateFunctionDeclaration(node,
                         node.decorators,
                         node.modifiers,
                         node.asteriskToken,
@@ -116,57 +117,103 @@ export class Program {
                         node.typeParameters,
                         node.parameters,
                         node.type,
-                        ts.createBlock(flatten(node.body.statements
-                            .map((statement) =>
-                                ts.transform(statement, [this.addFunctionSpec]).transformed))),
-                        ),
-                        ts.SyntaxKind.MultiLineCommentTrivia,
-                        printFunctionSpec(funcVar.generateAssertion()),
-                        true,
-                    );
-                } else if (ts.isVariableStatement(node)) {
-                    return ts.addSyntheticLeadingComment(ts.createVariableStatement(node.modifiers,
-                        ts.createVariableDeclarationList(node.declarationList.declarations.map((declaration) => {
-                            const initializer = declaration.initializer;
-                            if (initializer && ts.isFunctionExpression(initializer)) {
-                                return ts.updateVariableDeclaration(declaration,
-                                    declaration.name,
-                                    declaration.type,
-                                    ts.updateFunctionExpression(initializer,
-                                        initializer.modifiers,
-                                        initializer.asteriskToken,
-                                        initializer.name,
-                                        initializer.typeParameters,
-                                        initializer.parameters,
-                                        initializer.type,
-                                        ts.createBlock(flatten(initializer.body.statements
-                                            .map((statement) =>
-                                                ts.transform(statement, [this.addFunctionSpec]).transformed)))),
-                                );
-                            }
-                            return declaration;
-                        }))),
-                        ts.SyntaxKind.MultiLineCommentTrivia,
-                        printFunctionSpec(funcVar.generateAssertion()),
-                        true,
-                    );
-                } else {
-                    throw new Error("THis hsould hkahfgrehj");
-                }
+                        ts.createBlock(ts.visitNodes(node.body.statements, this.addFunctionSpecVisitor)),
+                    ),
+                    ts.SyntaxKind.MultiLineCommentTrivia,
+                    printFunctionSpec(funcVar.generateAssertion()),
+                    true,
+                );
+            } else if (ts.isVariableStatement(node)) {
+                return ts.addSyntheticLeadingComment(ts.createVariableStatement(node.modifiers,
+                    ts.createVariableDeclarationList(node.declarationList.declarations.map((declaration) => {
+                        const initializer = declaration.initializer;
+                        if (initializer && ts.isFunctionExpression(initializer)) {
+                            return ts.updateVariableDeclaration(declaration,
+                                declaration.name,
+                                declaration.type,
+                                ts.updateFunctionExpression(initializer,
+                                    initializer.modifiers,
+                                    initializer.asteriskToken,
+                                    initializer.name,
+                                    initializer.typeParameters,
+                                    initializer.parameters,
+                                    initializer.type,
+                                    ts.createBlock(
+                                        ts.visitNodes(initializer.body.statements, this.addFunctionSpecVisitor))),
+                            );
+                        }
+                        return declaration;
+                    }))),
+                    ts.SyntaxKind.MultiLineCommentTrivia,
+                    printFunctionSpec(funcVar.generateAssertion()),
+                    true,
+                );
             }
-            return node;
-        };
+        } else if (ts.isClassDeclaration(node)) {
+            return ts.updateClassDeclaration(
+                node,
+                node.decorators,
+                node.modifiers,
+                node.name,
+                node.typeParameters,
+                node.heritageClauses,
+                ts.visitNodes(node.members, this.addClassMemberSpecVisitor),
+            );
+        }
     }
 
-    private addFunctionSpecTopLevel: ts.TransformerFactory<ts.SourceFile> =
-        (context: ts.TransformationContext): ts.Transformer<ts.SourceFile> => {
-            return (src: ts.SourceFile) => {
-                const statements: ts.Statement[] = src.statements.map((statement) => statement);
-                return ts.updateSourceFileNode(src,
-                    ts.transform(statements, [this.addFunctionSpec]).transformed,
-                );
-            };
+    private addClassMemberSpecVisitor: ts.Visitor = (member: ts.Node) => {
+        if (ts.isMethodDeclaration(member)) {
+            const funcVar = this.functions[member.pos];
+            if (!funcVar) {
+                throw new Error("Class method not associated with function spec");
+            }
+            return ts.addSyntheticLeadingComment(ts.updateMethod(
+                member,
+                member.decorators,
+                member.modifiers,
+                member.asteriskToken,
+                member.name,
+                member.questionToken,
+                member.typeParameters,
+                member.parameters,
+                member.type,
+                ts.createBlock(ts.visitNodes(member.body.statements, this.addFunctionSpecVisitor)),
+                ),
+                ts.SyntaxKind.MultiLineCommentTrivia,
+                printFunctionSpec(funcVar.generateAssertion()),
+                true,
+            );
+        } else if (ts.isConstructorDeclaration(member)) {
+            return ts.addSyntheticLeadingComment(ts.updateConstructor(member,
+                member.decorators,
+                member.modifiers,
+                member.parameters,
+                ts.createBlock(ts.visitNodes(member.body.statements, this.addFunctionSpecVisitor)),
+                ),
+                ts.SyntaxKind.MultiLineCommentTrivia,
+                "DGAF",
+                true,
+            );
+        } else if (ts.isPropertyDeclaration(member)) {
+            return ts.addSyntheticLeadingComment(ts.updateProperty(
+                member,
+                member.decorators,
+                member.modifiers,
+                member.name,
+                undefined,
+                member.type,
+                member.initializer,
+                ),
+                ts.SyntaxKind.MultiLineCommentTrivia,
+                "DGAF",
+                true,
+            );
+        }
     }
+
+    private addFunctionSpecTopLevel: ts.TransformerFactory<ts.SourceFile> = (context) =>
+        (src) => ts.visitEachChild(src, this.addFunctionSpecVisitor, context)
 
     private addPredicates = (context: ts.TransformationContext): ts.Transformer<ts.SourceFile> => {
         return (src: ts.SourceFile) => {

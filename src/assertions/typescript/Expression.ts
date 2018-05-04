@@ -34,7 +34,11 @@ export function visitExpressionForCapturedVars(
 
     const visitExpressionPreservingTypeEnvs
         = (n: ts.Node) => visitExpressionForCapturedVars(n, outerScope, currentScope, program);
-    if (!node || ts.isStringLiteral(node) || ts.isNumericLiteral(node)) {
+    if (!node ||
+        ts.isStringLiteral(node) ||
+        ts.isNumericLiteral(node) ||
+        (ts.isToken(node) && node.kind === ts.SyntaxKind.ThisKeyword)
+    ) {
         return emptyFunctionAnalysis;
     } else if (ts.isIdentifier(node)) {
         if (find(currentScope, Variable.nameMatcher(node.text))) {
@@ -101,7 +105,6 @@ export function visitExpressionForCapturedVars(
             capturedVars: difference(capturedVars, currentScope),
             funcDef: func,
         };
-    } else {
-        throw new Error(`Node of kind ${node.kind} is not an expected Expression`);
     }
+    throw new Error(`Node of kind ${node.kind} is not an expected Expression`);
 }

@@ -1,4 +1,4 @@
-import { chain, find, isEqual, map } from "lodash";
+import { chain, difference, find, flatMap, isEqual, map, uniq } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../Assertion";
 import { CustomPredicate } from "../predicates/CustomPredicate";
@@ -6,11 +6,66 @@ import { DataProp } from "../predicates/DataProp";
 import { JSObject } from "../predicates/JSObject";
 import { NonePredicate } from "../predicates/NonePredicate";
 import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
+import { visitExpressionForCapturedVars } from "./Expression";
 import { Function } from "./Function";
 import { Program } from "./Program";
+import { visitStatementToFindCapturedVars, visitStatementToFindDeclaredVars } from "./Statement";
 import { Variable } from "./Variable";
 
 export class Class {
+    public static visitClass(
+        node: ts.ClassDeclaration,
+        classOuterScope: Variable[],
+        program: Program,
+    ): Variable[] {
+        const checker = program.getTypeChecker();
+        const classSymbol = checker.getSymbolAtLocation(node.name);
+        const className = classSymbol.name;
+
+        const classVar = program.getClass(className);
+        node.members.map((member) => {
+            if (ts.isConstructorDeclaration(member)) {
+                // Constructor does not matter yet: We need F+ and N+ before we can spit out the
+                // constructor
+            } else if (ts.isMethodDeclaration(member)) {
+                const symbol = checker.getSymbolAtLocation(member.name);
+                const methodVar = Function.fromTSNode(member, program, symbol.getName(), classVar);
+                const methodStatements = member.body.statements;
+                const declaredWithinMethod = flatMap(methodStatements,
+                    (statement) => visitStatementToFindDeclaredVars(statement, program));
+
+                const withinFuncCurrScope = [...methodVar.getParams(), ...declaredWithinMethod];
+                const capturedVars: Variable[] = uniq(
+                    flatMap(methodStatements, (statement) => visitStatementToFindCapturedVars(
+                        statement,
+                        program,
+                        classOuterScope,
+                        withinFuncCurrScope,
+                    )));
+
+                methodVar.setCapturedVars(capturedVars);
+                program.addFunction(member, methodVar);
+                classVar.addMethod(methodVar);
+                return capturedVars;
+            } else if (ts.isPropertyDeclaration(member)) {
+                const declaredField = Variable.fromPropertyDeclaration(member, program);
+                classVar.addField(declaredField);
+                if (member.initializer) {
+                    const expressionAnalysis =
+                        visitExpressionForCapturedVars(member.initializer, classOuterScope, [], program);
+                    if (expressionAnalysis.funcDef) {
+                        program.addFunction(member, expressionAnalysis.funcDef);
+                    }
+                    return expressionAnalysis.capturedVars;
+                }
+            } else {
+                throw new Error("Unexpected member in class");
+            }
+        });
+
+        return [];
+    }
+
     public static resolveParents(classMap: { [className: string]: Class }) {
         map(classMap, (classVar) => {
             if (classVar.inheritingClassName) {
@@ -73,21 +128,14 @@ export class Class {
             }
         }
 
-        node.members.map((member) => {
-            if (ts.isConstructorDeclaration(member)) {
-                // Constructor does not matter yet: We need F+ and N+ before we can spit out the
-                // constructor
-            } else if (ts.isMethodDeclaration(member)) {
-                const symbol = checker.getSymbolAtLocation(member.name);
-                this.methods.push(
-                    Function.fromTSNode(member, program, symbol.getName()),
-                );
-            } else if (ts.isPropertyDeclaration(member)) {
-                this.properties.push(Variable.fromPropertyDeclaration(member, program));
-            } else {
-                throw new Error("Unexpected member in class");
-            }
-        });
+    }
+
+    public addField(field: Variable): void {
+        this.properties.push(field);
+    }
+
+    public addMethod(method: Function): void {
+        this.methods.push(method);
     }
 
     public getProtoPredicate(): string {
@@ -159,7 +207,11 @@ export class Class {
         );
     }
 
-    public updateAncestorsAndDescendants(): boolean {
+    public getName(): string {
+        return this.name;
+    }
+
+    private updateAncestorsAndDescendants(): boolean {
         if (this.inheritingFrom) {
             let didUpdate: boolean = false;
             const inSubtree = [this, ...this.descendants];
@@ -177,7 +229,7 @@ export class Class {
         return false;
     }
 
-    public determineNPlus(): string[] {
+    private determineNPlus(): string[] {
         return chain([this, ...this.ancestors])
             .flatMap((cls) => cls.methods)
             .map((method) => method.name)
@@ -185,15 +237,11 @@ export class Class {
             .value();
     }
 
-    public determineFPlus(): string[] {
+    private determineFPlus(): string[] {
         return chain([this, ...this.descendants])
             .flatMap((cls) => cls.properties)
             .map((property) => property.name)
             .uniq()
             .value();
-    }
-
-    public getName(): string {
-        return this.name;
     }
 }

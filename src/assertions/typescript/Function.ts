@@ -19,6 +19,7 @@ export class Function extends Variable {
         node: ts.FunctionDeclaration | ts.FunctionExpression | ts.MethodDeclaration,
         program: Program,
         name?: string,
+        classVar?: Class,
     ): Function {
         const checker = program.getTypeChecker();
         const signature = checker.getSignatureFromDeclaration(node);

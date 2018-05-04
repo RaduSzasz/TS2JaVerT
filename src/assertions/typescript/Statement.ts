@@ -1,18 +1,10 @@
-import { difference, find, flatten, uniq } from "lodash";
+import { difference, find, flatMap, flatten, uniq } from "lodash";
 import * as ts from "typescript";
+import { Class } from "./Class";
 import { visitExpressionForCapturedVars } from "./Expression";
 import { Function } from "./Function";
 import { Program } from "./Program";
 import {Variable} from "./Variable";
-
-export interface FunctionBodyVariableUsage {
-    varsUsed: string[];
-    varsDeclared: string[];
-}
-
-export function getCapturedVarsNames(usage: FunctionBodyVariableUsage): string[] {
-    return difference(usage.varsUsed, usage.varsDeclared);
-}
 
 export function visitStatementToFindDeclaredVars(node: ts.Node, program: Program): Variable[] {
     const checker = program.getTypeChecker();
@@ -52,7 +44,7 @@ export function visitStatementToFindCapturedVars(
     currentScope: Variable[]): Variable[] {
     const checker = program.getTypeChecker();
     const visitStatement = (n: ts.Node) => visitStatementToFindCapturedVars(n, program, outerScope, currentScope);
-    if (!node || ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node)) {
+    if (!node || ts.isInterfaceDeclaration(node)) {
         // TODO: Classes can contain captured vars. It's not good practice, but it is possible.
         return [];
     } else if (ts.isVariableStatement(node)) {
@@ -72,6 +64,7 @@ export function visitStatementToFindCapturedVars(
             }
             return expressionAnalysis.capturedVars;
         }
+        return [];
     } else if (ts.isFunctionDeclaration(node)) {
         // Current function should be declared in the current scope.
         const functionName = checker.getSymbolAtLocation(node.name).name;
@@ -86,13 +79,13 @@ export function visitStatementToFindCapturedVars(
         // TODO: Consider this should perhaps be a method on functions
         const withinFuncOuterScope = [...outerScope, ...currentScope];
         const withinFuncCurrScope = [...functionVar.getParams(), ...declaredWithinFunc];
-        const capturedVars: Variable[] = uniq(flatten(
-            funcStatements.map((statement) => visitStatementToFindCapturedVars(
+        const capturedVars: Variable[] = uniq(
+            flatMap(funcStatements, (statement) => visitStatementToFindCapturedVars(
                 statement,
                 program,
                 withinFuncOuterScope,
                 withinFuncCurrScope,
-            ))));
+            )));
 
         functionVar.setCapturedVars(capturedVars);
         program.addFunction(node, functionVar);
@@ -102,6 +95,9 @@ export function visitStatementToFindCapturedVars(
             ...visitStatement(node.thenStatement),
             ...visitStatement(node.elseStatement),
         ]));
+    } else if (ts.isClassDeclaration(node)) {
+        const classScope = [...currentScope, ...outerScope];
+        return Class.visitClass(node, classScope, program);
     } else if (ts.isWhileStatement(node)) {
         return visitStatement(node.statement);
     } else if (ts.isReturnStatement(node)) {
