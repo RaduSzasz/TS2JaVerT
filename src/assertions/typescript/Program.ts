@@ -1,8 +1,10 @@
 import { flatMap, flatten, map } from "lodash";
 import * as ts from "typescript";
+import { Assertion } from "../Assertion";
 import { printFunctionSpec } from "../FunctionSpec";
 import { ForbiddenPredicate } from "../predicates/ForbiddenPredicate";
 import { IndexSignaturePredicate } from "../predicates/IndexSignaturePredicate";
+import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
 import { Class } from "./Class";
 import { Function } from "./Function";
 import { Interface } from "./Interface";
@@ -64,6 +66,12 @@ export class Program {
         const indexSignature = new IndexSignaturePredicate(name, type);
         this.indexSignatures[name] = indexSignature;
         return indexSignature;
+    }
+
+    public getPrototypeAssertion(): Assertion {
+        return new SeparatingConjunctionList([
+            map(this.classes, (cls) => cls.getProtoAssertion()),
+        ]);
     }
 
     public print(): void {

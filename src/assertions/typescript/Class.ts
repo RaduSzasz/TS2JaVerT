@@ -1,4 +1,4 @@
-import { chain, difference, find, flatMap, isEqual, map, uniq } from "lodash";
+import { chain, find, flatMap, isEqual, map, uniq } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../Assertion";
 import { CustomPredicate } from "../predicates/CustomPredicate";
@@ -196,14 +196,12 @@ export class Class {
     public getProtoAssertion(): Assertion {
         const protoPredName = this.getProtoPredicateName();
         const protoLogicalVariableName = this.getProtoLogicalVariableName();
-        if (this.inheritingFrom) {
-            return new CustomPredicate(
-                protoPredName,
-                `${protoLogicalVariableName}, ${this.inheritingFrom.getProtoLogicalVariableName()}`);
-        }
         return new CustomPredicate(
             protoPredName,
-            protoLogicalVariableName,
+            `${protoLogicalVariableName}, ${
+                this.inheritingFrom
+                    ? this.inheritingFrom.getProtoLogicalVariableName()
+                    : "Object.prototype"}`,
         );
     }
 
