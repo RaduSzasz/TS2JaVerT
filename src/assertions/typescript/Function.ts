@@ -1,3 +1,4 @@
+import { compact } from "lodash";
 import * as ts from "typescript";
 import * as uuid from "uuid";
 import { Assertion } from "../Assertion";
@@ -11,7 +12,12 @@ import { Variable } from "./Variable";
 
 export class Function extends Variable {
     public static logicalVariableFromFunction(func: Function): Function {
-        return new Function(func.program, func.returnType, func.params, `#${func.name}`);
+        return new Function(
+            func.program,
+            func.returnType,
+            func.params,
+            `#${func.name}`,
+            func.classVar);
     }
 
     public static fromTSNode(
@@ -29,7 +35,7 @@ export class Function extends Variable {
             .getParameters()
             .map((param) => Variable.fromTsSymbol(param, program));
 
-        return new Function(program, returnType, params, name);
+        return new Function(program, returnType, params, name, classVar);
     }
 
     private capturedVars: Variable[];
@@ -37,7 +43,9 @@ export class Function extends Variable {
     private constructor(private program: Program,
                         private returnType: Type,
                         private params: Variable[],
-                        name: string) {
+                        name: string,
+                        private classVar?: Class,
+    ) {
         super(name, typeFromParamAndReturnType(params, returnType));
     }
 
@@ -86,11 +94,12 @@ export class Function extends Variable {
             = this.capturedVars
                     .map((capturedVar) => capturedVar.toAssertionExtractingScope());
 
-        return new SeparatingConjunctionList([
+        return new SeparatingConjunctionList(compact([
             protoAssertion,
+            (this.classVar ? this.classVar.getAssertion("this") : undefined),
             ...paramAssertions,
             ...capturedVariableAssertions,
-        ]);
+        ]));
     }
 
     private generatePostCondition(pre: Assertion): Assertion {
