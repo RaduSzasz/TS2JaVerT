@@ -168,6 +168,7 @@ export class Program {
                 ts.visitNodes(node.members, this.addClassMemberSpecVisitor),
             );
         }
+        return node;
     }
 
     private addClassMemberSpecVisitor: ts.Visitor = (member: ts.Node) => {
@@ -177,16 +178,20 @@ export class Program {
                 throw new Error("Class method not associated with function spec");
             }
             return ts.addSyntheticLeadingComment(ts.updateMethod(
-                member,
-                member.decorators,
-                member.modifiers,
-                member.asteriskToken,
-                member.name,
-                member.questionToken,
-                member.typeParameters,
-                member.parameters,
-                member.type,
-                ts.createBlock(ts.visitNodes(member.body.statements, this.addFunctionSpecVisitor)),
+                    member,
+                    member.decorators,
+                    member.modifiers,
+                    member.asteriskToken,
+                    member.name,
+                    member.questionToken,
+                    member.typeParameters,
+                    member.parameters,
+                    member.type,
+                    ts.createBlock(
+                        ts.visitNodes(
+                            member.body.statements,
+                            this.addFunctionSpecVisitor),
+                    ),
                 ),
                 ts.SyntaxKind.MultiLineCommentTrivia,
                 printFunctionSpec(funcVar.generateAssertion()),
