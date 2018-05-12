@@ -22,7 +22,7 @@ export class Function extends Variable {
     }
 
     public static fromTSNode(
-        node: ts.FunctionDeclaration | ts.FunctionExpression | ts.MethodDeclaration,
+        node: ts.FunctionDeclaration | ts.FunctionExpression | ts.MethodDeclaration | ts.ConstructorDeclaration,
         program: Program,
         name?: string,
         classVar?: Class,

@@ -1,6 +1,7 @@
 import { chain, find, flatMap, isEqual, map, uniq } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../Assertion";
+import { printFunctionSpec } from "../FunctionSpec";
 import { CustomPredicate } from "../predicates/CustomPredicate";
 import { DataProp } from "../predicates/DataProp";
 import { JSObject } from "../predicates/JSObject";
@@ -25,8 +26,22 @@ export class Class {
         const classVar = program.getClass(className);
         node.members.map((member) => {
             if (ts.isConstructorDeclaration(member)) {
-                // Constructor does not matter yet: We need F+ and N+ before we can spit out the
-                // constructor
+                const constructorVar = Function.fromTSNode(member, program, "constructor", classVar);
+                const constructorStatements = member.body.statements;
+                const declaredWithinConstructor = flatMap(constructorStatements,
+                    (statement) => visitStatementToFindDeclaredVars(statement, program));
+
+                const withinFuncCurrScope = [...constructorVar.getParams(), ...declaredWithinConstructor];
+                const capturedVars: Variable[] = uniq(
+                    flatMap(constructorStatements, (statement) => visitStatementToFindCapturedVars(
+                        statement,
+                        program,
+                        classOuterScope,
+                        withinFuncCurrScope,
+                    )));
+                constructorVar.setCapturedVars(capturedVars);
+                classVar.setConstructor(constructorVar);
+                return capturedVars;
             } else if (ts.isMethodDeclaration(member)) {
                 const symbol = checker.getSymbolAtLocation(member.name);
                 const methodVar = Function.fromTSNode(member, program, symbol.getName(), classVar);
@@ -85,18 +100,12 @@ export class Class {
         });
     }
 
-    public static getAllAncestors(classes: Class[]): Class[] {
-        return chain(classes)
-            .flatMap((cls) => cls.ancestors)
-            .uniq()
-            .value();
-    }
-
     public readonly name: string;
     private inheritingClassName: string;
 
     private fPlus: string[];
     private nPlus: string[];
+    private constr: Function;
     private inheritingFrom: Class;
     private methods: Function[] = [];
     private properties: Variable[] = [];
@@ -207,6 +216,22 @@ export class Class {
 
     public getName(): string {
         return this.name;
+    }
+
+    public getConstructorSpec(): string {
+        if (!this.constr) {
+            throw new Error("Can not get constructor spec. No constructor set for class.");
+        }
+
+        return printFunctionSpec(this.constr.generateAssertion());
+    }
+
+    private setConstructor(constr: Function): void {
+        if (this.constr) {
+            throw new Error("Can not set constructor. Class has already set it once.");
+        }
+
+        this.constr = constr;
     }
 
     private updateAncestorsAndDescendants(): boolean {

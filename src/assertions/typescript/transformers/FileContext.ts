@@ -2,6 +2,7 @@
  * Copied from https://github.com/angular/tsickle
  */
 import * as ts from "typescript";
+import { Program } from "../Program";
 
 class FileContext {
     /**
@@ -123,17 +124,17 @@ function addFileContexts(context: ts.TransformationContext) {
     };
 }
 
-export function createCustomTransformers(given: ts.CustomTransformers): ts.CustomTransformers {
+export function createCustomTransformers(program: Program, given: ts.CustomTransformers): ts.CustomTransformers {
     const before = given.before || [];
     before.unshift(addFileContexts);
     before.push(prepareNodesBeforeTypeScriptTransform);
     const after = given.after || [];
-    after.unshift(emitMissingSyntheticCommentsAfterTypescriptTransform);
+    after.unshift(createEmitMissingSyntheticCommentsAfterTypescriptTransform(program));
     return {before, after};
 }
 
-function emitMissingSyntheticCommentsAfterTypescriptTransform(context: ts.TransformationContext) {
-    return (sourceFile: ts.SourceFile) => {
+const createEmitMissingSyntheticCommentsAfterTypescriptTransform = (program: Program) =>
+    (context: ts.TransformationContext) => (sourceFile: ts.SourceFile) => {
         const fileContext = assertFileContext(context, sourceFile);
         const nodePath: ts.Node[] = [];
         visitNode(sourceFile);
@@ -169,12 +170,15 @@ function emitMissingSyntheticCommentsAfterTypescriptTransform(context: ts.Transf
                     }
                 }
             } else if (ts.isFunctionDeclaration(node)) {
-                if (node.name.text === "C") {
+                try {
+                    const cls = program.getClass(node.name.text);
                     ts.addSyntheticLeadingComment(node,
                         ts.SyntaxKind.MultiLineCommentTrivia,
-                        "FGHKHJSEGDFKUYEG",
+                        cls.getConstructorSpec(),
                         true,
                     );
+                } catch (err) {
+                    // Not an issue, we just didn't find the class
                 }
             }
             nodePath.push(node);
@@ -182,4 +186,3 @@ function emitMissingSyntheticCommentsAfterTypescriptTransform(context: ts.Transf
             nodePath.pop();
         }
     };
-}

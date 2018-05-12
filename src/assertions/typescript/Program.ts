@@ -79,7 +79,7 @@ export class Program {
             undefined,
             undefined,
             undefined,
-            createCustomTransformers({
+            createCustomTransformers(this, {
                 before: [
                     this.addFunctionSpecTopLevel,
                     this.addPredicates,
