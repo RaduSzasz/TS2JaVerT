@@ -6,7 +6,7 @@ import { FunctionObject } from "../../predicates/FunctionObject";
 import { SeparatingConjunctionList } from "../../predicates/SeparatingConjunctionList";
 import { Class } from "../Class";
 import { Program } from "../Program";
-import { Type, typeFromParamAndReturnType, typeFromTSType } from "../Types";
+import { Type, typeFromParamAndReturnType } from "../Types";
 import { Variable } from "../Variable";
 
 export class Function extends Variable {

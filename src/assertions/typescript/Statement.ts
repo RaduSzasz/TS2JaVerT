@@ -1,4 +1,4 @@
-import { difference, find, flatMap, flatten, uniq } from "lodash";
+import { difference, find, flatten, uniq } from "lodash";
 import * as ts from "typescript";
 import { Class } from "./Class";
 import { visitExpressionForCapturedVars } from "./Expression";

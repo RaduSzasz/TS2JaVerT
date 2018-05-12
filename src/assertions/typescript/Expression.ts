@@ -1,4 +1,4 @@
-import { difference, find, flatten, uniq } from "lodash";
+import { difference, find, uniq } from "lodash";
 import * as ts from "typescript";
 import { Function } from "./functions/Function";
 import { createAndAnalyseFunction } from "./functions/FunctionCreator";

@@ -5,6 +5,7 @@ import { Program } from "../Program";
 import { visitStatementToFindCapturedVars, visitStatementToFindDeclaredVars } from "../Statement";
 import { Type, typeFromTSType } from "../Types";
 import { Variable } from "../Variable";
+import { Constructor } from "./Constructor";
 import { Function } from "./Function";
 
 export function createAndAnalyseFunction(
@@ -74,7 +75,8 @@ function createFunctionInstance(
     name: string,
     classVar?: Class,
 ): Function {
+    if (ts.isConstructorDeclaration(node)) {
+        return new Constructor(program, returnType, params, name, classVar);
+    }
     return new Function(program, returnType, params, name, classVar);
-
-    // TODO: Add constructor and method here
 }
