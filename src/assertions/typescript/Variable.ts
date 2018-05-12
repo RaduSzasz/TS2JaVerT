@@ -8,7 +8,7 @@ import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionLi
 import { True } from "../predicates/True";
 import { TypesPredicate } from "../predicates/TypesPredicate";
 import { Class } from "./Class";
-import { Function } from "./Function";
+import { Function } from "./functions/Function";
 import { Program } from "./Program";
 import {
     isAnyType, isClassType,

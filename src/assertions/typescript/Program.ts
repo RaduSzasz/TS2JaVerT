@@ -6,7 +6,7 @@ import { ForbiddenPredicate } from "../predicates/ForbiddenPredicate";
 import { IndexSignaturePredicate } from "../predicates/IndexSignaturePredicate";
 import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
 import { Class } from "./Class";
-import { Function } from "./Function";
+import { Function } from "./functions/Function";
 import { Interface } from "./Interface";
 import { visitStatementToFindCapturedVars, visitStatementToFindDeclaredVars } from "./Statement";
 import { createCustomTransformers } from "./transformers/FileContext";

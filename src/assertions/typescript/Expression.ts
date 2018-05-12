@@ -1,6 +1,7 @@
 import { difference, find, flatten, uniq } from "lodash";
 import * as ts from "typescript";
-import { Function } from "./Function";
+import { Function } from "./functions/Function";
+import { createAndAnalyseFunction } from "./functions/FunctionCreator";
 import { Program } from "./Program";
 import { visitStatementToFindCapturedVars, visitStatementToFindDeclaredVars } from "./Statement";
 import { Variable } from "./Variable";
@@ -83,27 +84,10 @@ export function visitExpressionForCapturedVars(
             ...node.arguments.map(visitExpressionPreservingTypeEnvs),
         ].reduce(reduceExpressionAnalysis, emptyFunctionAnalysis);
     } else if (ts.isFunctionExpression(node)) {
-        const func: Function = Function.fromTSNode(node, program, "NameTBD");
-        const funcStatements = node.body.statements;
-
-        const declaredWithinFunc: Variable[] = flatten(
-            funcStatements.map((statement) => visitStatementToFindDeclaredVars(statement, program)),
-        );
-
-        const withinFuncOuterScope = [...outerScope, ...currentScope];
-        const withinFuncCurrScope = [...func.getParams(), ...declaredWithinFunc];
-        const capturedVars = uniq(flatten(
-            funcStatements.map((statement) => visitStatementToFindCapturedVars(
-                statement,
-                program,
-                withinFuncOuterScope,
-                withinFuncCurrScope,
-            ))));
-
-        func.setCapturedVars(capturedVars);
+        const funcVar = createAndAnalyseFunction(node, program, outerScope);
         return {
-            capturedVars: difference(capturedVars, currentScope),
-            funcDef: func,
+            capturedVars: difference(funcVar.getCapturedVars(), currentScope),
+            funcDef: funcVar,
         };
     }
     throw new Error(`Node of kind ${node.kind} is not an expected Expression`);

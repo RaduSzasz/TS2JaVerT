@@ -1,4 +1,4 @@
-import { chain, find, flatMap, isEqual, map, uniq } from "lodash";
+import { chain, find, isEqual, map } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../Assertion";
 import { printFunctionSpec } from "../FunctionSpec";
@@ -8,9 +8,9 @@ import { JSObject } from "../predicates/JSObject";
 import { NonePredicate } from "../predicates/NonePredicate";
 import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
 import { visitExpressionForCapturedVars } from "./Expression";
-import { Function } from "./Function";
+import { Function } from "./functions/Function";
+import { createAndAnalyseFunction } from "./functions/FunctionCreator";
 import { Program } from "./Program";
-import { visitStatementToFindCapturedVars, visitStatementToFindDeclaredVars } from "./Statement";
 import { Variable } from "./Variable";
 
 export class Class {
@@ -26,42 +26,24 @@ export class Class {
         const classVar = program.getClass(className);
         node.members.map((member) => {
             if (ts.isConstructorDeclaration(member)) {
-                const constructorVar = Function.fromTSNode(member, program, "constructor", classVar);
-                const constructorStatements = member.body.statements;
-                const declaredWithinConstructor = flatMap(constructorStatements,
-                    (statement) => visitStatementToFindDeclaredVars(statement, program));
-
-                const withinFuncCurrScope = [...constructorVar.getParams(), ...declaredWithinConstructor];
-                const capturedVars: Variable[] = uniq(
-                    flatMap(constructorStatements, (statement) => visitStatementToFindCapturedVars(
-                        statement,
-                        program,
-                        classOuterScope,
-                        withinFuncCurrScope,
-                    )));
-                constructorVar.setCapturedVars(capturedVars);
-                classVar.setConstructor(constructorVar);
-                return capturedVars;
+                return createAndAnalyseFunction(
+                    member,
+                    program,
+                    classOuterScope,
+                    (constr) => { classVar.setConstructor(constr); },
+                    classVar,
+                ).getCapturedVars();
             } else if (ts.isMethodDeclaration(member)) {
-                const symbol = checker.getSymbolAtLocation(member.name);
-                const methodVar = Function.fromTSNode(member, program, symbol.getName(), classVar);
-                const methodStatements = member.body.statements;
-                const declaredWithinMethod = flatMap(methodStatements,
-                    (statement) => visitStatementToFindDeclaredVars(statement, program));
-
-                const withinFuncCurrScope = [...methodVar.getParams(), ...declaredWithinMethod];
-                const capturedVars: Variable[] = uniq(
-                    flatMap(methodStatements, (statement) => visitStatementToFindCapturedVars(
-                        statement,
-                        program,
-                        classOuterScope,
-                        withinFuncCurrScope,
-                    )));
-
-                methodVar.setCapturedVars(capturedVars);
-                program.addFunction(member, methodVar);
-                classVar.addMethod(methodVar);
-                return capturedVars;
+                return createAndAnalyseFunction(
+                    member,
+                    program,
+                    classOuterScope,
+                    (method) => {
+                        program.addFunction(member, method);
+                        classVar.addMethod(method);
+                    },
+                    classVar,
+                ).getCapturedVars();
             } else if (ts.isPropertyDeclaration(member)) {
                 const declaredField = Variable.fromPropertyDeclaration(member, program);
                 classVar.addField(declaredField);

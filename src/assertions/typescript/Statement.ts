@@ -2,7 +2,8 @@ import { difference, find, flatMap, flatten, uniq } from "lodash";
 import * as ts from "typescript";
 import { Class } from "./Class";
 import { visitExpressionForCapturedVars } from "./Expression";
-import { Function } from "./Function";
+import { Function } from "./functions/Function";
+import { createAndAnalyseFunction, setCapturedVars } from "./functions/FunctionCreator";
 import { Program } from "./Program";
 import {Variable} from "./Variable";
 
@@ -25,7 +26,7 @@ export function visitStatementToFindDeclaredVars(node: ts.Node, program: Program
         const declaredSymbol = checker.getSymbolAtLocation(node.name);
         return [Variable.fromTsSymbol(declaredSymbol, program)];
     } else if (ts.isFunctionDeclaration(node)) {
-        return [Function.fromTSNode(node, program)];
+        return [createAndAnalyseFunction(node, program)];
     } else if (ts.isIfStatement(node)) {
         return [
             ...visitStatementToFindDeclaredVars(node.thenStatement, program),
@@ -68,28 +69,13 @@ export function visitStatementToFindCapturedVars(
     } else if (ts.isFunctionDeclaration(node)) {
         // Current function should be declared in the current scope.
         const functionName = checker.getSymbolAtLocation(node.name).name;
-        const functionVar: Function = find(currentScope, Variable.nameMatcher(functionName)) as Function;
-        if (!functionVar) {
+        const funcVar: Function = find(currentScope, Variable.nameMatcher(functionName)) as Function;
+        if (!funcVar) {
             throw new Error("Current function declaration is not detected in current scope");
         }
-        const funcStatements = node.body.statements;
-        const declaredWithinFunc: Variable[] = flatten(
-            funcStatements.map((statement) => visitStatementToFindDeclaredVars(statement, program)),
-        );
-        // TODO: Consider this should perhaps be a method on functions
-        const withinFuncOuterScope = [...outerScope, ...currentScope];
-        const withinFuncCurrScope = [...functionVar.getParams(), ...declaredWithinFunc];
-        const capturedVars: Variable[] = uniq(
-            flatMap(funcStatements, (statement) => visitStatementToFindCapturedVars(
-                statement,
-                program,
-                withinFuncOuterScope,
-                withinFuncCurrScope,
-            )));
-
-        functionVar.setCapturedVars(capturedVars);
-        program.addFunction(node, functionVar);
-        return difference(capturedVars, currentScope);
+        setCapturedVars(funcVar, program, outerScope, node);
+        program.addFunction(node, funcVar);
+        return difference(funcVar.getCapturedVars(), currentScope);
     } else if (ts.isIfStatement(node)) {
         return uniq(flatten([
             ...visitStatement(node.thenStatement),

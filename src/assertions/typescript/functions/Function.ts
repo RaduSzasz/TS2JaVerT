@@ -1,14 +1,13 @@
 import { compact } from "lodash";
-import * as ts from "typescript";
 import * as uuid from "uuid";
-import { Assertion } from "../Assertion";
-import { FunctionSpec } from "../FunctionSpec";
-import { FunctionObject } from "../predicates/FunctionObject";
-import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
-import { Class } from "./Class";
-import { Program } from "./Program";
-import { Type, typeFromParamAndReturnType, typeFromTSType } from "./Types";
-import { Variable } from "./Variable";
+import { Assertion } from "../../Assertion";
+import { FunctionSpec } from "../../FunctionSpec";
+import { FunctionObject } from "../../predicates/FunctionObject";
+import { SeparatingConjunctionList } from "../../predicates/SeparatingConjunctionList";
+import { Class } from "../Class";
+import { Program } from "../Program";
+import { Type, typeFromParamAndReturnType, typeFromTSType } from "../Types";
+import { Variable } from "../Variable";
 
 export class Function extends Variable {
     public static logicalVariableFromFunction(func: Function): Function {
@@ -21,32 +20,14 @@ export class Function extends Variable {
             func.id);
     }
 
-    public static fromTSNode(
-        node: ts.FunctionDeclaration | ts.FunctionExpression | ts.MethodDeclaration | ts.ConstructorDeclaration,
-        program: Program,
-        name?: string,
-        classVar?: Class,
-    ): Function {
-        const checker = program.getTypeChecker();
-        const signature = checker.getSignatureFromDeclaration(node);
-        name = name || checker.getSymbolAtLocation(node.name).name;
-        const tsReturnType: ts.Type = checker.getReturnTypeOfSignature(signature);
-        const returnType = typeFromTSType(tsReturnType, program);
-        const params: Variable[] = signature
-            .getParameters()
-            .map((param) => Variable.fromTsSymbol(param, program));
-
-        return new Function(program, returnType, params, name, classVar);
-    }
-
     private capturedVars: Variable[];
 
-    private constructor(private program: Program,
-                        private returnType: Type,
-                        private params: Variable[],
-                        name: string,
-                        private classVar?: Class,
-                        private readonly id?: string,
+    constructor(private program: Program,
+                private returnType: Type,
+                private params: Variable[],
+                name: string,
+                private classVar?: Class,
+                private readonly id?: string,
     ) {
         super(name, typeFromParamAndReturnType(params, returnType));
         this.id = this.id ||
@@ -63,16 +44,12 @@ export class Function extends Variable {
         return this.returnType;
     }
 
-    public isNamed(): boolean {
-        return this.name !== undefined && this.name !== null && this.name !== "";
-    }
-
     public getName(): string {
         return this.name;
     }
 
     public getParams(): Variable[] {
-        return this.params;
+        return [...this.params];
     }
 
     public setCapturedVars(capturedVars: Variable[]) {
@@ -94,6 +71,10 @@ export class Function extends Variable {
             this.name,
             this.classVar ? this.id : undefined,
         );
+    }
+
+    public getCapturedVars(): Variable[] {
+        return [...this.capturedVars];
     }
 
     private generatePreCondition(): Assertion {
