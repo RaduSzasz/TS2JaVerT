@@ -17,7 +17,8 @@ export class Function extends Variable {
             func.returnType,
             func.params,
             `#${func.name}`,
-            func.classVar);
+            func.classVar,
+            func.id);
     }
 
     public static fromTSNode(
@@ -45,8 +46,13 @@ export class Function extends Variable {
                         private params: Variable[],
                         name: string,
                         private classVar?: Class,
+                        private readonly id?: string,
     ) {
         super(name, typeFromParamAndReturnType(params, returnType));
+        this.id = this.id ||
+            (this.classVar
+                ? `${this.classVar.getName()}_${this.name}`
+                : uuid.v4());
     }
 
     public isFunction(): this is Function {
@@ -77,14 +83,17 @@ export class Function extends Variable {
         const pre: Assertion = this.generatePreCondition();
         const post: Assertion = this.generatePostCondition(pre);
         return {
+            id: this.id,
             post,
             pre,
-            uuid: uuid.v4(),
         };
     }
 
     public toAssertion(): Assertion {
-        return new FunctionObject(this.name);
+        return new FunctionObject(
+            this.name,
+            this.classVar ? this.id : undefined,
+        );
     }
 
     private generatePreCondition(): Assertion {
