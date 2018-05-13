@@ -1,7 +1,5 @@
-import * as uuid from "uuid";
 import { Assertion } from "../../Assertion";
 import { FunctionSpec } from "../../FunctionSpec";
-import { Emp } from "../../predicates/Emp";
 import { EMPTY_SET, EmptyFields } from "../../predicates/EmptyFields";
 import { JSObject } from "../../predicates/JSObject";
 import { SeparatingConjunctionList } from "../../predicates/SeparatingConjunctionList";
@@ -22,7 +20,12 @@ export class Constructor extends Function {
     }
 
     public generateAssertion(): FunctionSpec {
-        return { pre: this.generatePre(), post: new Emp(), id: uuid.v4() };
+        const regularFunctionSpec = super.generateAssertion();
+        return {
+            id: regularFunctionSpec.id,
+            post: this.generatePost(),
+            pre: this.generatePre(),
+        };
     }
 
     private generatePre(): Assertion {
@@ -35,9 +38,24 @@ export class Constructor extends Function {
         this.classVar = classVar;
 
         return new SeparatingConjunctionList([
-            regularFunctionPre,
             new JSObject("this", classVar.getProtoLogicalVariableName()),
             new EmptyFields("this", EMPTY_SET),
-        ])
+            regularFunctionPre,
+        ]);
+    }
+
+    private generatePost(): Assertion {
+        const classVar = this.classVar;
+        if (!classVar) {
+            throw new Error("Constructors must have associated class variable. Something went wrong!");
+        }
+        this.classVar = undefined;
+        const regularFunctionPre = super.generatePreCondition();
+        this.classVar = classVar;
+
+        return new SeparatingConjunctionList([
+            classVar.getAssertion("this"),
+            regularFunctionPre,
+        ]);
     }
 }
