@@ -23,11 +23,11 @@ export class Function extends Variable {
     private capturedVars: Variable[] | undefined;
     private readonly id: string;
 
-    constructor(private program: Program,
+    constructor(protected program: Program,
                 private returnType: Type,
                 private params: Variable[],
                 name: string,
-                private classVar?: Class,
+                protected classVar?: Class,
                 id?: string,
     ) {
         super(name, typeFromParamAndReturnType(params, returnType));
@@ -78,7 +78,7 @@ export class Function extends Variable {
         return this.capturedVars && [...this.capturedVars];
     }
 
-    private generatePreCondition(): Assertion {
+    protected generatePreCondition(): Assertion {
         if (!this.capturedVars) {
             throw new Error("Can not generate pre-condition before determining captured vars");
         }

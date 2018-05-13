@@ -79,6 +79,9 @@ function createFunctionInstance(
     classVar?: Class,
 ): Function {
     if (ts.isConstructorDeclaration(node)) {
+        if (!classVar) {
+            throw new Error("Constructors must have associated class variable. Something went wrong!");
+        }
         return new Constructor(program, returnType, params, name, classVar);
     }
     return new Function(program, returnType, params, name, classVar);
