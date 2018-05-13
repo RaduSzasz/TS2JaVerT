@@ -9,6 +9,9 @@ export class Interface {
     constructor(node: ts.InterfaceDeclaration, program: Program) {
         const checker = program.getTypeChecker();
         const interfaceSymbol = checker.getSymbolAtLocation(node.name);
+        if (!interfaceSymbol || !interfaceSymbol.members) {
+            throw new Error("Failure why creating Interface! Cannot retrieve symbol");
+        }
         this.name = interfaceSymbol.name;
         this.objectLiteral = new ObjectLiteral(interfaceSymbol.members, program);
     }

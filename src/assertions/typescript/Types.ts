@@ -84,7 +84,13 @@ export function typeFromTSType(tsType: ts.Type, program: Program): Type {
             return { typeFlag: TypeFlags.String };
         case ts.TypeFlags.Object:
             const symbol = tsType.symbol;
+            if (!symbol) {
+                throw new Error("Cannot create type from TS type. No symbol associated with the TS Type");
+            }
             if (symbol.flags === ts.SymbolFlags.TypeLiteral) {
+                if (!symbol.members) {
+                    throw new Error("TS Object Literal symbol has no associated members");
+                }
                 const objectLiteralType = new ObjectLiteral(symbol.members, program);
                 return {
                     objectLiteralType,

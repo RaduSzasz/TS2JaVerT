@@ -17,10 +17,10 @@ export function createAndAnalyseFunction(
 ): Function {
     const checker = program.getTypeChecker();
     const signature = checker.getSignatureFromDeclaration(node);
-    const name = ts.isConstructorDeclaration(node)
-        ? "constructor"
-        : checker.getSymbolAtLocation(node.name).name;
-
+    if (!signature) {
+        throw new Error("Cannot create Function! Unable to retrieve signature");
+    }
+    const name = getFunctionName(node, program);
     const tsReturnType: ts.Type = checker.getReturnTypeOfSignature(signature);
     const returnType = typeFromTSType(tsReturnType, program);
     const params: Variable[] = signature
@@ -52,6 +52,9 @@ export function setCapturedVars(
     outerScope: Variable[],
     node: ts.FunctionDeclaration | ts.FunctionExpression | ts.MethodDeclaration | ts.ConstructorDeclaration,
 ) {
+    if (!node.body) {
+        throw new Error("Cannot check function captured variables. No body associated with the function");
+    }
     const statements = node.body.statements;
     const declaredWithinFunc = flatMap(statements,
         (statement) => visitStatementToFindDeclaredVars(statement, program));
@@ -79,4 +82,21 @@ function createFunctionInstance(
         return new Constructor(program, returnType, params, name, classVar);
     }
     return new Function(program, returnType, params, name, classVar);
+}
+
+function getFunctionName(
+    node: ts.FunctionDeclaration | ts.FunctionExpression | ts.MethodDeclaration | ts.ConstructorDeclaration,
+    program: Program,
+) {
+    if (ts.isConstructorDeclaration(node)) {
+        return "constructor";
+    }
+    if (node.name) {
+        const checker = program.getTypeChecker();
+        const nameSymbol = checker.getSymbolAtLocation(node.name);
+        if (nameSymbol) {
+            return nameSymbol.name;
+        }
+    }
+    throw new Error("Unable to determine name of non-constructor signature");
 }

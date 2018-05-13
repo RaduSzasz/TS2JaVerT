@@ -20,8 +20,10 @@ export class Class {
         program: Program,
     ): Variable[] {
         const checker = program.getTypeChecker();
-        const classSymbol = checker.getSymbolAtLocation(node.name);
-        const className = classSymbol.name;
+        if (!node.name || !checker.getSymbolAtLocation(node.name)) {
+            throw new Error("Failure while trying to visit class! Cannot retrieve class symbol");
+        }
+        const className = checker.getSymbolAtLocation(node.name)!.name;
 
         const classVar = program.getClass(className);
         node.members.map((member) => {
@@ -55,9 +57,8 @@ export class Class {
                     }
                     return expressionAnalysis.capturedVars;
                 }
-            } else {
-                throw new Error("Unexpected member in class");
             }
+            throw new Error("Unexpected member in class");
         });
 
         return [];
@@ -75,20 +76,13 @@ export class Class {
         while (map(classMap, (classVar) => classVar.updateAncestorsAndDescendants()).some((val) => val)) {
             // Intentionally blank
         }
-
-        map(classMap, (classVar) => {
-            classVar.fPlus = classVar.determineFPlus();
-            classVar.nPlus = classVar.determineNPlus();
-        });
     }
 
     public readonly name: string;
-    private inheritingClassName: string;
+    private inheritingClassName: string | undefined;
 
-    private fPlus: string[];
-    private nPlus: string[];
-    private constr: Function;
-    private inheritingFrom: Class;
+    private constr: Function | undefined;
+    private inheritingFrom: Class | undefined;
     private methods: Function[] = [];
     private properties: Variable[] = [];
     private ancestors: Class[] = [this];
@@ -101,7 +95,11 @@ export class Class {
 
         const checker = program.getTypeChecker();
         const classSymbol = checker.getSymbolAtLocation(node.name);
-        this.name = classSymbol.name;
+        if (classSymbol) {
+            this.name = classSymbol.name;
+        } else {
+            throw new Error("Can not initialize class. Class symbol is false");
+        }
 
         if (node.heritageClauses) {
             // We only need to care about extends clauses because the implements has already been
@@ -115,7 +113,11 @@ export class Class {
                 }
 
                 const parentType = checker.getSymbolAtLocation(extendsClause.types[0].expression);
-                this.inheritingClassName = parentType.name;
+                if (parentType) {
+                    this.inheritingClassName = parentType.name;
+                } else {
+                    throw new Error("Can not find name associated with parent class");
+                }
             }
         }
 
@@ -132,13 +134,14 @@ export class Class {
     public getProtoPredicate(): string {
         const currProto = "proto";
         const parentProto = this.inheritingFrom ? "parentProto" : "Object.prototype";
+        const fPlus = this.determineFPlus();
         const predDef = `${this.getProtoPredicateName()}(${this.inheritingFrom ?
             [currProto, parentProto].join(", ") :
             currProto
         })`;
         const predicate = new SeparatingConjunctionList([
             new JSObject(currProto, parentProto),
-            ...this.fPlus.map((field) => new NonePredicate(currProto, field)),
+            ...fPlus.map((field) => new NonePredicate(currProto, field)),
             ...this.methods.map((method) => new SeparatingConjunctionList([
                 new DataProp(currProto, method.getName(), Variable.logicalVariableFromVariable(method)),
                 Function.logicalVariableFromFunction(method).toAssertion(),
@@ -153,11 +156,12 @@ export class Class {
     public getInstancePredicate(): string {
         const o = "o";
         const proto = "proto";
+        const nPlus = this.determineNPlus();
         return `
         ${this.getInstancePredicateName()}(${o}, ${proto}):
             ${new SeparatingConjunctionList([
             new JSObject(o, proto),
-            ...this.nPlus.map((namedMethod) => new NonePredicate(o, namedMethod)),
+            ...nPlus.map((namedMethod) => new NonePredicate(o, namedMethod)),
             ...this.properties.map((prop) => new SeparatingConjunctionList([
                 new DataProp(o, prop.name, Variable.logicalVariableFromVariable(prop)),
                 Variable.logicalVariableFromVariable(prop).toAssertion(),

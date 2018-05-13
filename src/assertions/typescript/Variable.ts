@@ -23,7 +23,7 @@ export class Variable {
     public static fromTsSymbol(symbol: ts.Symbol, program: Program): Variable {
         const name = symbol.getName();
         const checker = program.getTypeChecker();
-        const type = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration);
+        const type = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration!);
 
         return new Variable(name, typeFromTSType(type, program));
     }
@@ -36,6 +36,9 @@ export class Variable {
         const propertyType: ts.Type = checker.getTypeAtLocation(propertyDeclaration);
         const nameSymbol = checker.getSymbolAtLocation(propertyDeclaration.name);
 
+        if (!nameSymbol) {
+            throw new Error("Cannot create Variable! Cannot retrieve variable name symbol");
+        }
         return new Variable(nameSymbol.name, typeFromTSType(propertyType, program));
     }
 

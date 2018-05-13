@@ -125,7 +125,8 @@ export class Program {
                         node.typeParameters,
                         node.parameters,
                         node.type,
-                        ts.createBlock(ts.visitNodes(node.body.statements, this.addFunctionSpecVisitor)),
+                        // TODO: Think of a better way of solving this rather than using !
+                        ts.createBlock(ts.visitNodes(node.body!.statements, this.addFunctionSpecVisitor)),
                     ),
                     ts.SyntaxKind.MultiLineCommentTrivia,
                     printFunctionSpec(funcVar.generateAssertion()),
@@ -164,7 +165,7 @@ export class Program {
                 node.modifiers,
                 node.name,
                 node.typeParameters,
-                node.heritageClauses,
+                node.heritageClauses || [],
                 ts.visitNodes(node.members, this.addClassMemberSpecVisitor),
             );
         }
@@ -189,7 +190,8 @@ export class Program {
                     member.type,
                     ts.createBlock(
                         ts.visitNodes(
-                            member.body.statements,
+                            // TODO: Think of a better way of solving this rather than using !
+                            member.body!.statements,
                             this.addFunctionSpecVisitor),
                     ),
                 ),
@@ -197,38 +199,14 @@ export class Program {
                 printFunctionSpec(funcVar.generateAssertion()),
                 true,
             );
-        } else if (ts.isConstructorDeclaration(member)) {
-            return ts.addSyntheticLeadingComment(ts.updateConstructor(member,
-                member.decorators,
-                member.modifiers,
-                member.parameters,
-                ts.createBlock(ts.visitNodes(member.body.statements, this.addFunctionSpecVisitor)),
-                ),
-                ts.SyntaxKind.MultiLineCommentTrivia,
-                "DGAF",
-                true,
-            );
-        } else if (ts.isPropertyDeclaration(member)) {
-            return ts.addSyntheticLeadingComment(ts.updateProperty(
-                member,
-                member.decorators,
-                member.modifiers,
-                member.name,
-                undefined,
-                member.type,
-                member.initializer,
-                ),
-                ts.SyntaxKind.MultiLineCommentTrivia,
-                "DGAF",
-                true,
-            );
         }
+        return member;
     }
 
     private addFunctionSpecTopLevel: ts.TransformerFactory<ts.SourceFile> = (context) =>
         (src) => ts.visitEachChild(src, this.addFunctionSpecVisitor, context)
 
-    private addPredicates = (context: ts.TransformationContext): ts.Transformer<ts.SourceFile> => {
+    private addPredicates = (): ts.Transformer<ts.SourceFile> => {
         return (src: ts.SourceFile) => {
             const predicates = [
                 ForbiddenPredicate.toPredicate(),
@@ -237,7 +215,7 @@ export class Program {
                 ...flatMap(this.classes, (cls) => [cls.getInstancePredicate(), cls.getProtoPredicate()]),
             ].join("\n\n");
             const commentedNode = ts.addSyntheticLeadingComment(
-                ts.createNotEmittedStatement(undefined),
+                ts.createNotEmittedStatement(src.getFirstToken()),
                 ts.SyntaxKind.MultiLineCommentTrivia,
                 predicates,
                 true,

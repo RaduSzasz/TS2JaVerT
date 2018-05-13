@@ -22,7 +22,7 @@ export class ObjectLiteral {
     private static readonly INDEX_SIGNATURE_NAME = "__index";
 
     private objectType: ObjectType;
-    private indexSignature: IndexSignaturePredicate;
+    private indexSignature: IndexSignaturePredicate | undefined;
     private regularFields: Variable[] = [];
 
     constructor(members: ts.SymbolTable, program: Program) {
@@ -34,11 +34,15 @@ export class ObjectLiteral {
             } else if (key === ObjectLiteral.CONSTRUCTOR_SIGNATURE_NAME) {
                 this.objectType = ObjectType.Constructor;
             } else if (key === ObjectLiteral.INDEX_SIGNATURE_NAME) {
-                if (value.declarations.length !== 1) {
-                    throw new Error("More than one indexing signature declaration.");
+                if (!value.declarations || value.declarations.length !== 1) {
+                    throw new Error("Must have one or no index signature declaration.");
                 }
-                const [indexingType] = value.declarations.map((declaration: ts.IndexSignatureDeclaration) =>
-                        typeFromTSType(checker.getTypeFromTypeNode(declaration.type), program));
+                const [indexingType] = value.declarations.map((declaration) => {
+                    if (ts.isIndexSignatureDeclaration(declaration) && declaration.type) {
+                        return typeFromTSType(checker.getTypeFromTypeNode(declaration.type), program);
+                    }
+                    throw new Error(`Cannot find indexing type. Received ${declaration.kind} TS node`);
+                });
                 this.indexSignature = program.addIndexingSignature(indexingType);
             } else {
                 this.regularFields.push(Variable.fromTsSymbol(value, program));

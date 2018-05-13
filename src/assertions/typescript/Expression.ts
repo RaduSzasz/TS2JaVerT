@@ -1,14 +1,13 @@
-import { difference, find, uniq } from "lodash";
+import { compact, difference, find, uniq } from "lodash";
 import * as ts from "typescript";
 import { Function } from "./functions/Function";
 import { createAndAnalyseFunction } from "./functions/FunctionCreator";
 import { Program } from "./Program";
-import { visitStatementToFindCapturedVars, visitStatementToFindDeclaredVars } from "./Statement";
 import { Variable } from "./Variable";
 
 export interface ExpressionAnalysis {
     capturedVars: Variable[];
-    funcDef: Function;
+    funcDef: Function | undefined;
 }
 
 function reduceExpressionAnalysis(currResult: ExpressionAnalysis, nextResult: ExpressionAnalysis): ExpressionAnalysis {
@@ -23,18 +22,18 @@ function reduceExpressionAnalysis(currResult: ExpressionAnalysis, nextResult: Ex
 
 const emptyFunctionAnalysis: ExpressionAnalysis = {
     capturedVars: [],
-    funcDef: undefined as Function,
+    funcDef: undefined,
 };
 
 export function visitExpressionForCapturedVars(
-    node: ts.Node,
+    node: ts.Node | undefined,
     outerScope: Variable[],
     currentScope: Variable[],
     program: Program,
 ): ExpressionAnalysis {
 
     const visitExpressionPreservingTypeEnvs
-        = (n: ts.Node) => visitExpressionForCapturedVars(n, outerScope, currentScope, program);
+        = (n: ts.Node | undefined) => visitExpressionForCapturedVars(n, outerScope, currentScope, program);
     if (!node ||
         ts.isStringLiteral(node) ||
         ts.isNumericLiteral(node) ||
@@ -49,16 +48,16 @@ export function visitExpressionForCapturedVars(
         if (!capturedVar) {
             throw new Error(`Identifier not present in current or outer scope.`);
         }
-        return { capturedVars: [capturedVar], funcDef: undefined as Function };
+        return { capturedVars: [capturedVar], funcDef: undefined };
     } else if (ts.isPropertyAccessExpression(node)) {
         // node represents something like a.b; not a["b"]
         return visitExpressionPreservingTypeEnvs(node.expression);
     } else if (ts.isElementAccessExpression(node)) {
         // node represents something like a["b"] or a[x]
-        return [
+        return compact([
             visitExpressionPreservingTypeEnvs(node.expression),
-            visitExpressionPreservingTypeEnvs(node.argumentExpression),
-        ].reduce(reduceExpressionAnalysis, emptyFunctionAnalysis);
+            node.argumentExpression && visitExpressionPreservingTypeEnvs(node.argumentExpression),
+        ]).reduce(reduceExpressionAnalysis, emptyFunctionAnalysis);
     } else if (ts.isBinaryExpression(node)) {
         return [
             visitExpressionPreservingTypeEnvs(node.left),

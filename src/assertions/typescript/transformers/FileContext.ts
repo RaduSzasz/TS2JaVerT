@@ -170,15 +170,17 @@ const createEmitMissingSyntheticCommentsAfterTypescriptTransform = (program: Pro
                     }
                 }
             } else if (ts.isFunctionDeclaration(node)) {
-                try {
-                    const cls = program.getClass(node.name.text);
-                    ts.addSyntheticLeadingComment(node,
-                        ts.SyntaxKind.MultiLineCommentTrivia,
-                        cls.getConstructorSpec(),
-                        true,
-                    );
-                } catch (err) {
-                    // Not an issue, we just didn't find the class
+                if (node.name) {
+                    try {
+                        const cls = program.getClass(node.name.text);
+                        ts.addSyntheticLeadingComment(node,
+                            ts.SyntaxKind.MultiLineCommentTrivia,
+                            cls.getConstructorSpec(),
+                            true,
+                        );
+                    } catch (err) {
+                        // Not an issue, we just didn't find the class
+                    }
                 }
             }
             nodePath.push(node);

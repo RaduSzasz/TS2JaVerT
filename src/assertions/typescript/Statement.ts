@@ -7,7 +7,10 @@ import { createAndAnalyseFunction, setCapturedVars } from "./functions/FunctionC
 import { Program } from "./Program";
 import {Variable} from "./Variable";
 
-export function visitStatementToFindDeclaredVars(node: ts.Node, program: Program): Variable[] {
+export function visitStatementToFindDeclaredVars(
+    node: ts.Node | undefined,
+    program: Program,
+): Variable[] {
     const checker = program.getTypeChecker();
     if (!node ||
         ts.isClassDeclaration(node) ||
@@ -24,6 +27,9 @@ export function visitStatementToFindDeclaredVars(node: ts.Node, program: Program
         );
     } else if (ts.isVariableDeclaration(node)) {
         const declaredSymbol = checker.getSymbolAtLocation(node.name);
+        if (!declaredSymbol) {
+            throw new Error("Cannot retrieve variable name symbol");
+        }
         return [Variable.fromTsSymbol(declaredSymbol, program)];
     } else if (ts.isFunctionDeclaration(node)) {
         return [createAndAnalyseFunction(node, program)];
@@ -39,12 +45,13 @@ export function visitStatementToFindDeclaredVars(node: ts.Node, program: Program
 }
 
 export function visitStatementToFindCapturedVars(
-    node: ts.Node,
+    node: ts.Node | undefined,
     program: Program,
     outerScope: Variable[],
     currentScope: Variable[]): Variable[] {
     const checker = program.getTypeChecker();
-    const visitStatement = (n: ts.Node) => visitStatementToFindCapturedVars(n, program, outerScope, currentScope);
+    const visitStatement = (n: ts.Node | undefined) =>
+        visitStatementToFindCapturedVars(n, program, outerScope, currentScope);
     if (!node || ts.isInterfaceDeclaration(node)) {
         // TODO: Classes can contain captured vars. It's not good practice, but it is possible.
         return [];
@@ -57,8 +64,8 @@ export function visitStatementToFindCapturedVars(
             const expressionAnalysis =
                 visitExpressionForCapturedVars(node.initializer, outerScope, currentScope, program);
             if (expressionAnalysis.funcDef) {
-                const varStatement = node.parent.parent;
-                if (!ts.isVariableStatement(varStatement)) {
+                const varStatement = node.parent!.parent;
+                if (!varStatement || !ts.isVariableStatement(varStatement)) {
                     throw new Error("Parent of variable declaration is not variable statement");
                 }
                 program.addFunction(varStatement, expressionAnalysis.funcDef);
@@ -68,7 +75,11 @@ export function visitStatementToFindCapturedVars(
         return [];
     } else if (ts.isFunctionDeclaration(node)) {
         // Current function should be declared in the current scope.
-        const functionName = checker.getSymbolAtLocation(node.name).name;
+        const nameSymbol = node.name && checker.getSymbolAtLocation(node.name);
+        if (!nameSymbol) {
+            throw new Error("Cannot find function captured vars! Cannot retrieve function name");
+        }
+        const functionName = nameSymbol.name;
         const funcVar: Function = find(currentScope, Variable.nameMatcher(functionName)) as Function;
         if (!funcVar) {
             throw new Error("Current function declaration is not detected in current scope");

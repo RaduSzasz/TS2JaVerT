@@ -1,4 +1,6 @@
+import * as uuid from "uuid";
 import { FunctionSpec } from "../../FunctionSpec";
+import { Emp } from "../../predicates/Emp";
 import { Class } from "../Class";
 import { Program } from "../Program";
 import { Type } from "../Types";
@@ -16,6 +18,6 @@ export class Constructor extends Function {
     }
 
     public generateAssertion(): FunctionSpec {
-        return undefined;
+        return { pre: new Emp(), post: new Emp(), id: uuid.v4() };
     }
 }

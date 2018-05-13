@@ -20,17 +20,18 @@ export class Function extends Variable {
             func.id);
     }
 
-    private capturedVars: Variable[];
+    private capturedVars: Variable[] | undefined;
+    private readonly id: string;
 
     constructor(private program: Program,
                 private returnType: Type,
                 private params: Variable[],
                 name: string,
                 private classVar?: Class,
-                private readonly id?: string,
+                id?: string,
     ) {
         super(name, typeFromParamAndReturnType(params, returnType));
-        this.id = this.id ||
+        this.id = id ||
             (this.classVar
                 ? `${this.classVar.getName()}_${this.name}`
                 : uuid.v4());
@@ -73,11 +74,14 @@ export class Function extends Variable {
         );
     }
 
-    public getCapturedVars(): Variable[] {
-        return [...this.capturedVars];
+    public getCapturedVars(): Variable[] | undefined {
+        return this.capturedVars && [...this.capturedVars];
     }
 
     private generatePreCondition(): Assertion {
+        if (!this.capturedVars) {
+            throw new Error("Can not generate pre-condition before determining captured vars");
+        }
         const protoAssertion = this.program.getPrototypeAssertion();
         const paramAssertions: Assertion[] = this.params.map((param) => param.toAssertion());
         const capturedVariableAssertions: Assertion[]

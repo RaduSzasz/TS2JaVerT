@@ -3,6 +3,13 @@
     "module": "commonjs",
     "target": "es2016",
     "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": true,
     "outDir": "./dist",
     "sourceMap": true
   },
