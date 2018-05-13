@@ -57,6 +57,7 @@ export class Class {
                     }
                     return expressionAnalysis.capturedVars;
                 }
+                return [];
             }
             throw new Error("Unexpected member in class");
         });

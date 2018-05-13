@@ -1,4 +1,5 @@
 import { flatMap, uniq } from "lodash";
+import * as uuid from "uuid";
 import * as ts from "typescript";
 import { Class } from "../Class";
 import { Program } from "../Program";
@@ -93,8 +94,9 @@ function getFunctionName(
 ) {
     if (ts.isConstructorDeclaration(node)) {
         return "constructor";
-    }
-    if (node.name) {
+    } else if (ts.isFunctionExpression(node)) {
+        return uuid.v4();
+    } else if (node.name) {
         const checker = program.getTypeChecker();
         const nameSymbol = checker.getSymbolAtLocation(node.name);
         if (nameSymbol) {

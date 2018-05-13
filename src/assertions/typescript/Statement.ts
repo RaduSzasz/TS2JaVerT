@@ -84,7 +84,7 @@ export function visitStatementToFindCapturedVars(
         if (!funcVar) {
             throw new Error("Current function declaration is not detected in current scope");
         }
-        setCapturedVars(funcVar, program, outerScope, node);
+        setCapturedVars(funcVar, program, [...currentScope, ...outerScope], node);
         program.addFunction(node, funcVar);
         return difference(funcVar.getCapturedVars(), currentScope);
     } else if (ts.isIfStatement(node)) {

@@ -83,7 +83,7 @@ export function visitExpressionForCapturedVars(
             ...node.arguments.map(visitExpressionPreservingTypeEnvs),
         ].reduce(reduceExpressionAnalysis, emptyFunctionAnalysis);
     } else if (ts.isFunctionExpression(node)) {
-        const funcVar = createAndAnalyseFunction(node, program, outerScope);
+        const funcVar = createAndAnalyseFunction(node, program, [...currentScope, ...outerScope]);
         return {
             capturedVars: difference(funcVar.getCapturedVars(), currentScope),
             funcDef: funcVar,
