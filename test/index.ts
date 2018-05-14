@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import { CustomPredicate } from "../src/assertions/predicates/CustomPredicate";
 import { ScopePredicate } from "../src/assertions/predicates/ScopePredicate";
 import { SeparatingConjunctionList } from "../src/assertions/predicates/SeparatingConjunctionList";
 import { TypesPredicate } from "../src/assertions/predicates/TypesPredicate";
@@ -18,6 +18,7 @@ describe("A suite for checking if we find identifiers in expressions", () => {
         const funcSpec = func.generateAssertion();
         expect(funcSpec.pre).toBeDefined();
         expect(funcSpec.pre).toEqual(new SeparatingConjunctionList([
+            new SeparatingConjunctionList([]),
             new SeparatingConjunctionList([
                 new ScopePredicate("y", "#y"),
                 new TypesPredicate("#y", TypeFlags.Number),
@@ -37,10 +38,12 @@ describe("A suite for checking if we find identifiers in expressions", () => {
         expect(innerFunc.getName()).toEqual("g");
         const outerFuncSpec = outerFunc.generateAssertion();
         expect(outerFuncSpec.pre).toEqual(new SeparatingConjunctionList([
+            new SeparatingConjunctionList([]),
             new TypesPredicate("x", TypeFlags.Number),
         ]));
         const innerFuncSpec = innerFunc.generateAssertion();
         expect(innerFuncSpec.pre).toEqual(new SeparatingConjunctionList([
+            new SeparatingConjunctionList([]),
             new SeparatingConjunctionList([
                 new ScopePredicate("x", "#x"),
                 new TypesPredicate("#x", TypeFlags.Number),

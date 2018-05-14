@@ -70,7 +70,7 @@ export class Program {
 
     public getPrototypeAssertion(): Assertion {
         return new SeparatingConjunctionList([
-            map(this.classes, (cls) => cls.getProtoAssertion()),
+            ...map(this.classes, (cls) => cls.getProtoAssertion()),
         ]);
     }
 

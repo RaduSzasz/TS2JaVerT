@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import uuid = require("uuid");
+import * as uuid from "uuid";
 import { Assertion } from "../Assertion";
 import { CustomPredicate } from "../predicates/CustomPredicate";
 import { Emp } from "../predicates/Emp";

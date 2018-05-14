@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "pretest": "tsc --target es5 --outDir ./.tmp test/index.ts",
+    "pretest": "tsc --target es2016 --module commonjs --outDir ./.tmp test/index.ts",
     "test": "jasmine ./.tmp/test/index.js",
     "start": "npm run build && node dist/index.js"
   },
@@ -17,13 +17,13 @@
     "@types/uuid": "^3.4.3",
     "@types/yargs": "^11.0.0",
     "jasmine": "^3.1.0",
-    "npm": "^6.0.0",
-    "typescript": "^2.8.3"
+    "npm": "^6.0.0"
   },
   "dependencies": {
     "lodash": "^4.17.5",
     "node": "^9.11.0",
     "uuid": "^3.2.1",
-    "yargs": "^11.1.0"
+    "yargs": "^11.1.0",
+    "typescript": "2.8.3"
   }
 }
