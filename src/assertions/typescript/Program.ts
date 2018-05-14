@@ -81,8 +81,8 @@ export class Program {
             undefined,
             createCustomTransformers(this, {
                 before: [
-                    this.addFunctionSpecTopLevel,
                     this.addPredicates,
+                    this.addFunctionSpecTopLevel,
                 ],
             }),
         );

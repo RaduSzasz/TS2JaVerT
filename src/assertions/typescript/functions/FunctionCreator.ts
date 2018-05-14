@@ -1,6 +1,6 @@
 import { flatMap, uniq } from "lodash";
-import * as uuid from "uuid";
 import * as ts from "typescript";
+import * as uuid from "uuid";
 import { Class } from "../Class";
 import { Program } from "../Program";
 import { visitStatementToFindCapturedVars, visitStatementToFindDeclaredVars } from "../Statement";
