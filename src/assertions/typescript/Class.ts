@@ -134,12 +134,9 @@ export class Class {
 
     public getProtoPredicate(): string {
         const currProto = "proto";
-        const parentProto = this.inheritingFrom ? "parentProto" : "Object.prototype";
+        const parentProto = "parentProto";
         const fPlus = this.determineFPlus();
-        const predDef = `${this.getProtoPredicateName()}(${this.inheritingFrom ?
-            [currProto, parentProto].join(", ") :
-            currProto
-        })`;
+        const predDef = `${this.getProtoPredicateName()}(${currProto}, ${parentProto})`;
         const predicate = new SeparatingConjunctionList([
             new JSObject(currProto, parentProto),
             ...fPlus.map((field) => new NonePredicate(currProto, field)),
