@@ -199,6 +199,21 @@ export class Program {
                 printFunctionSpec(funcVar.generateAssertion()),
                 true,
             );
+        } else if (ts.isPropertyDeclaration(member) && this.functions[member.pos]) {
+            const funcVar = this.functions[member.pos];
+            return ts.addSyntheticLeadingComment(ts.updateProperty(
+                    member,
+                    member.decorators,
+                    member.modifiers,
+                    member.name,
+                    member.questionToken,
+                    member.type,
+                    member.initializer,
+                ),
+                ts.SyntaxKind.MultiLineCommentTrivia,
+                printFunctionSpec(funcVar.generateAssertion()),
+                true,
+            );
         }
         return member;
     }
