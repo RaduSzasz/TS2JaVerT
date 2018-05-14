@@ -1,4 +1,4 @@
-import { compact, difference, find, uniq } from "lodash";
+import { compact, difference, find, map, uniq } from "lodash";
 import * as ts from "typescript";
 import { Function } from "./functions/Function";
 import { createAndAnalyseFunction } from "./functions/FunctionCreator";
@@ -88,6 +88,11 @@ export function visitExpressionForCapturedVars(
             capturedVars: difference(funcVar.getCapturedVars(), currentScope),
             funcDef: funcVar,
         };
+    } else if (ts.isParenthesizedExpression(node)) {
+        return visitExpressionPreservingTypeEnvs(node.expression);
+    } else if (ts.isNewExpression(node)) {
+        return map(node.arguments, visitExpressionPreservingTypeEnvs)
+                .reduce(reduceExpressionAnalysis, emptyFunctionAnalysis);
     }
     throw new Error(`Node of kind ${node.kind} is not an expected Expression`);
 }
