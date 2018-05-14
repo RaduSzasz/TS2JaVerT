@@ -1,4 +1,4 @@
-import { difference, find, flatten, uniq } from "lodash";
+import { difference, find, flatMap, flatten, uniq } from "lodash";
 import * as ts from "typescript";
 import { Class } from "./Class";
 import { visitExpressionForCapturedVars } from "./Expression";
@@ -40,6 +40,8 @@ export function visitStatementToFindDeclaredVars(
         ];
     } else if (ts.isWhileStatement(node)) {
         return visitStatementToFindDeclaredVars(node.statement, program);
+    } else if (ts.isBlock(node)) {
+        return flatMap(node.statements, (n) => visitStatementToFindDeclaredVars(n, program));
     }
     throw new Error(`Unexpected node type ${node.kind} when looking for declared vars`);
 }
@@ -101,6 +103,8 @@ export function visitStatementToFindCapturedVars(
         return visitExpressionForCapturedVars(node.expression, outerScope, currentScope, program).capturedVars;
     } else if (ts.isExpressionStatement(node)) {
         return visitExpressionForCapturedVars(node.expression, outerScope, currentScope, program).capturedVars;
+    } else if (ts.isBlock(node)) {
+        return uniq(flatMap(node.statements, visitStatement));
     }
     throw new Error(`Unexpected node type ${node.kind} in visitStatementAndExtractVars`);
 }
