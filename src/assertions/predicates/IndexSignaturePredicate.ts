@@ -35,8 +35,8 @@ export class IndexSignaturePredicate implements Assertion {
         ]);
         return `
         ${this.name}(${o}, ${allFields}, ${forbiddenFields}) =
-            [def1] ${def1.toString()}
-            [def2] ${def2.toString()}
+            [base] ${def1.toString()}
+            [rec] ${def2.toString()}
 `;
     }
 }

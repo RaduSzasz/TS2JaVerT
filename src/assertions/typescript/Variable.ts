@@ -5,7 +5,6 @@ import { CustomPredicate } from "../predicates/CustomPredicate";
 import { Emp } from "../predicates/Emp";
 import { ScopePredicate } from "../predicates/ScopePredicate";
 import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
-import { True } from "../predicates/True";
 import { TypesPredicate } from "../predicates/TypesPredicate";
 import { Class } from "./Class";
 import { Function } from "./functions/Function";
@@ -73,12 +72,9 @@ export class Variable {
     public toAssertion(): Assertion {
         const { name, type } = this;
         if (isPrimitiveType(type)) {
-            if (type.typeFlag === TypeFlags.Void) {
-                return new Emp();
-            }
             return new TypesPredicate(name, type.typeFlag);
         } else if (isAnyType(type)) {
-            return new True();
+            return new Emp();
         } else if (isInterfaceType(type)) {
             return new CustomPredicate(type.name, name);
         } else if (isObjectLiteralType(type)) {

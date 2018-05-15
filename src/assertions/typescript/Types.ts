@@ -5,16 +5,17 @@ import { Program } from "./Program";
 import {Variable} from "./Variable";
 
 export enum TypeFlags {
-    Any = 1,
-    Void = 2,
-    Boolean = 4,
-    Number = 8,
-    String = 16,
-    ObjectLiteralType = 32,
-    Class = 64,
-    Interface = 128,
-    Union = 256,
-    Function = 512,
+    Any,
+    Void,
+    Undefined,
+    Boolean,
+    Number,
+    String,
+    ObjectLiteralType,
+    Class,
+    Interface,
+    Union,
+    Function,
 }
 
 export interface Type {
@@ -80,8 +81,11 @@ export function typeFromTSType(tsType: ts.Type, program: Program): Type {
         case ts.TypeFlags.Void:
             return { typeFlag: TypeFlags.Void };
         case ts.TypeFlags.String:
-            /// Not sure if this is what we want...
             return { typeFlag: TypeFlags.String };
+        case ts.TypeFlags.Boolean:
+            return { typeFlag: TypeFlags.Boolean };
+        case ts.TypeFlags.Undefined:
+            return { typeFlag: TypeFlags.Undefined };
         case ts.TypeFlags.Object:
             const symbol = tsType.symbol;
             if (!symbol) {
