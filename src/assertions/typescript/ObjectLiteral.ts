@@ -2,6 +2,7 @@ import { compact } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../Assertion";
 import { DataProp } from "../predicates/DataProp";
+import { ForbiddenPredicate } from "../predicates/ForbiddenPredicate";
 import { FunctionObject } from "../predicates/FunctionObject";
 import { IndexSignaturePredicate } from "../predicates/IndexSignaturePredicate";
 import { JSObject } from "../predicates/JSObject";
@@ -54,7 +55,10 @@ export class ObjectLiteral {
         // The type of o is irrelevant; we will never use it
         return new SeparatingConjunctionList(compact([
             this.getObjectAssertion(o),
-            this.indexSignature && this.indexSignature.toAssertion(o, "hasOwnProperty"),
+            this.indexSignature && new SeparatingConjunctionList([
+                this.indexSignature.toAssertion(o, `${o}_fields`),
+                new ForbiddenPredicate(o),
+            ]),
             ...this.regularFields.map((field: Variable) => {
                 const logicalVariable = Variable.logicalVariableFromVariable(field);
                 return new SeparatingConjunctionList([

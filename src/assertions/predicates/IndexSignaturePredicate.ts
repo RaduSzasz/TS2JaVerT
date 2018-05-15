@@ -3,38 +3,33 @@ import { Type } from "../typescript/Types";
 import { Variable } from "../typescript/Variable";
 import { CustomPredicate } from "./CustomPredicate";
 import { DataProp } from "./DataProp";
-import { ForbiddenPredicate } from "./ForbiddenPredicate";
 import { HardcodedStringAssertion } from "./HardcodedStringAssertion";
 import { SeparatingConjunctionList } from "./SeparatingConjunctionList";
 
 export class IndexSignaturePredicate implements Assertion {
     constructor(private name: string, private type: Type) { }
 
-    public toAssertion(varName: string, forbidden: string): Assertion {
-        return new CustomPredicate(this.name, `${varName}, ${forbidden}`);
+    public toAssertion(varName: string, fields: string): Assertion {
+        return new CustomPredicate(this.name, `${varName}, ${fields}`);
     }
 
     public toString(): string {
         const o = "o";
         const allFields = "fields";
-        const forbiddenFields = "forbidden";
         const fieldName = "#f";
         const otherFields = "#fields'";
         const logicalVar = new Variable("#v", this.type);
 
-        const def1 = new SeparatingConjunctionList([
-            new HardcodedStringAssertion(`${allFields} == []`),
-            new ForbiddenPredicate(o, forbiddenFields),
-        ]);
+        const def1 = new HardcodedStringAssertion(`${allFields} == []`);
 
         const def2 = new SeparatingConjunctionList([
             new HardcodedStringAssertion(`${allFields} == ${fieldName} :: ${otherFields}`),
-            new DataProp(o, fieldName, logicalVar),
+            new DataProp(o, fieldName, logicalVar, true),
             logicalVar.toAssertion(),
-            new CustomPredicate(this.name, `${o}, ${otherFields}, ${forbiddenFields}`),
+            new CustomPredicate(this.name, `${o}, ${otherFields}`),
         ]);
         return `
-        ${this.name}(${o}, ${allFields}, ${forbiddenFields}) =
+        ${this.name}(${o}, ${allFields}) =
             [base] ${def1.toString()}
             [rec] ${def2.toString()}
 `;
