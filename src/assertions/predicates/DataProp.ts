@@ -6,7 +6,7 @@ export class DataProp implements Assertion {
         private obj: string,
         private fieldName: string,
         private logicalVariable: Variable,
-        private logicalFieldName: boolean = false
+        private logicalFieldName: boolean = false,
     ) { }
 
     public toString() {

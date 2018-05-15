@@ -73,6 +73,9 @@ export interface UnionType extends Type {
     typeFlag: TypeFlags.Union;
     types: Type[];
 }
+export function isUnionType(type: Type): type is UnionType {
+    return type.typeFlag === TypeFlags.Union;
+}
 
 export function typeFromTSType(tsType: ts.Type, program: Program): Type {
     switch (tsType.flags) {
@@ -86,6 +89,11 @@ export function typeFromTSType(tsType: ts.Type, program: Program): Type {
             return { typeFlag: TypeFlags.Boolean };
         case ts.TypeFlags.Undefined:
             return { typeFlag: TypeFlags.Undefined };
+        case ts.TypeFlags.Union:
+            return {
+                typeFlag: TypeFlags.Union,
+                types: (tsType as ts.UnionType).types.map((t) => typeFromTSType(t, program)),
+            } as Type;
         case ts.TypeFlags.Object:
             const symbol = tsType.symbol;
             if (!symbol) {

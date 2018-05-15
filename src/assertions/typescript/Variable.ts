@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import * as uuid from "uuid";
 import { Assertion } from "../Assertion";
 import { CustomPredicate } from "../predicates/CustomPredicate";
+import { Disjunction } from "../predicates/Disjunction";
 import { Emp } from "../predicates/Emp";
 import { ScopePredicate } from "../predicates/ScopePredicate";
 import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
@@ -12,7 +13,7 @@ import { Program } from "./Program";
 import {
     isAnyType, isClassType,
     isInterfaceType, isObjectLiteralType,
-    isPrimitiveType,
+    isPrimitiveType, isUnionType,
     Type,
     TypeFlags,
     typeFromTSType,
@@ -81,9 +82,11 @@ export class Variable {
             return type.objectLiteralType.toAssertion(name);
         } else if (isClassType(type)) {
             return type.cls.getAssertion(name);
+        } else if (isUnionType(type)) {
+            return new Disjunction(type.types.map((t) => new Variable(this.name, t).toAssertion()));
         }
 
-        throw new Error(`Can not convert type ${this.type.typeFlag} to assertion`);
+        throw new Error(`Cannot convert type ${this.type.typeFlag} to assertion`);
     }
 
     public toAssertionExtractingScope(): Assertion {

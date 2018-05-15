@@ -22,7 +22,7 @@ export function createAndAnalyseFunction(
         throw new Error("Cannot create Function! Unable to retrieve signature");
     }
     const name = getFunctionName(node, program);
-    const tsReturnType: ts.Type = checker.getReturnTypeOfSignature(signature);
+    const tsReturnType = signature.getReturnType();
     const returnType = typeFromTSType(tsReturnType, program);
     const params: Variable[] = signature
         .getParameters()
