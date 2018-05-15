@@ -20,26 +20,19 @@ import {
 } from "./Types";
 
 export class Variable {
-    public static fromTsSymbol(symbol: ts.Symbol, program: Program): Variable {
-        const name = symbol.getName();
-        const checker = program.getTypeChecker();
-        const type = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration!);
-
-        return new Variable(name, typeFromTSType(type, program));
-    }
-
-    public static fromPropertyDeclaration(
-        propertyDeclaration: ts.PropertyDeclaration,
+    public static fromDeclaration(
+        declaration: ts.ParameterDeclaration | ts.PropertyDeclaration | ts.VariableDeclaration,
         program: Program,
     ): Variable {
         const checker = program.getTypeChecker();
-        const propertyType: ts.Type = checker.getTypeAtLocation(propertyDeclaration);
-        const nameSymbol = checker.getSymbolAtLocation(propertyDeclaration.name);
+        const nameSymbol = checker.getSymbolAtLocation(declaration.name);
 
         if (!nameSymbol) {
             throw new Error("Cannot create Variable! Cannot retrieve variable name symbol");
+        } else if (!declaration.type) {
+            throw new Error("Cannot create Variable! Property declaration has no associated type node");
         }
-        return new Variable(nameSymbol.name, typeFromTSType(propertyType, program));
+        return new Variable(nameSymbol.name, typeFromTSType(declaration.type, program));
     }
 
     public static newReturnVariable(type: Type): Variable {

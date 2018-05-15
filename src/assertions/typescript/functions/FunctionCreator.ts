@@ -4,7 +4,7 @@ import * as uuid from "uuid";
 import { Class } from "../Class";
 import { Program } from "../Program";
 import { visitStatementToFindCapturedVars, visitStatementToFindDeclaredVars } from "../Statement";
-import { Type, typeFromTSType } from "../Types";
+import { Type, TypeFlags, typeFromTSType } from "../Types";
 import { Variable } from "../Variable";
 import { Constructor } from "./Constructor";
 import { Function } from "./Function";
@@ -19,14 +19,17 @@ export function createAndAnalyseFunction(
     const checker = program.getTypeChecker();
     const signature = checker.getSignatureFromDeclaration(node);
     if (!signature) {
-        throw new Error("Cannot create Function! Unable to retrieve signature");
+        throw new Error("Cannot create Function! Unable to retrieve signature.");
+    } else if (!node.type && !ts.isConstructorDeclaration(node)) {
+        throw new Error("Cannot create Function! Declaration has no associated return type.");
     }
     const name = getFunctionName(node, program);
-    const tsReturnType = signature.getReturnType();
-    const returnType = typeFromTSType(tsReturnType, program);
-    const params: Variable[] = signature
-        .getParameters()
-        .map((param) => Variable.fromTsSymbol(param, program));
+    const returnType = ts.isConstructorDeclaration(node)
+        ? { typeFlag: TypeFlags.Any }
+        : typeFromTSType(node.type!, program);
+    const params: Variable[] = node
+        .parameters
+        .map((param) => Variable.fromDeclaration(param, program));
 
     const funcVar = createFunctionInstance(
         node,

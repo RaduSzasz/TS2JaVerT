@@ -47,7 +47,7 @@ export class Class {
                     classVar,
                 ).getCapturedVars();
             } else if (ts.isPropertyDeclaration(member)) {
-                const declaredField = Variable.fromPropertyDeclaration(member, program);
+                const declaredField = Variable.fromDeclaration(member, program);
                 classVar.addField(declaredField);
                 if (member.initializer) {
                     const expressionAnalysis =

@@ -11,7 +11,6 @@ export function visitStatementToFindDeclaredVars(
     node: ts.Node | undefined,
     program: Program,
 ): Variable[] {
-    const checker = program.getTypeChecker();
     if (!node ||
         ts.isClassDeclaration(node) ||
         ts.isInterfaceDeclaration(node) ||
@@ -26,11 +25,7 @@ export function visitStatementToFindDeclaredVars(
             node.declarations.map((declaration) => visitStatementToFindDeclaredVars(declaration, program)),
         );
     } else if (ts.isVariableDeclaration(node)) {
-        const declaredSymbol = checker.getSymbolAtLocation(node.name);
-        if (!declaredSymbol) {
-            throw new Error("Cannot retrieve variable name symbol");
-        }
-        return [Variable.fromTsSymbol(declaredSymbol, program)];
+        return [Variable.fromDeclaration(node, program)];
     } else if (ts.isFunctionDeclaration(node)) {
         return [createAndAnalyseFunction(node, program)];
     } else if (ts.isIfStatement(node)) {

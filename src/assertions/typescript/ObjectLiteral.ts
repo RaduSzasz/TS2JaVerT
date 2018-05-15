@@ -27,7 +27,6 @@ export class ObjectLiteral {
     private regularFields: Variable[] = [];
 
     constructor(members: ts.SymbolTable, program: Program) {
-        const checker = program.getTypeChecker();
         this.objectType = ObjectType.RegularObject;
         members.forEach(((value: ts.Symbol, key: ts.__String) => {
             if (key === ObjectLiteral.CALL_SIGNATURE_NAME) {
@@ -40,13 +39,15 @@ export class ObjectLiteral {
                 }
                 const [indexingType] = value.declarations.map((declaration) => {
                     if (ts.isIndexSignatureDeclaration(declaration) && declaration.type) {
-                        return typeFromTSType(checker.getTypeFromTypeNode(declaration.type), program);
+                        return typeFromTSType(declaration.type, program);
                     }
                     throw new Error(`Cannot find indexing type. Received ${declaration.kind} TS node`);
                 });
                 this.indexSignature = program.addIndexingSignature(indexingType);
+            } else if (value.valueDeclaration && ts.isPropertyDeclaration(value.valueDeclaration)) {
+                this.regularFields.push(Variable.fromDeclaration(value.valueDeclaration, program));
             } else {
-                this.regularFields.push(Variable.fromTsSymbol(value, program));
+                throw new Error("Unexpected member type in object literal type");
             }
         }));
     }
