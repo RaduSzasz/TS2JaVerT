@@ -1,4 +1,5 @@
-import { AssertionKind, AssertionObject } from "./Assertion";
+import { AssertionKind } from "./Assertion";
+import { AssertionObject } from "./AssertionObject";
 
 export class NoneAssertion extends AssertionObject {
     constructor(private o: string, private field: string) {

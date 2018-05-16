@@ -22,13 +22,6 @@ export interface Assertion {
     toString(): string;
 }
 
-export abstract class AssertionObject implements Assertion {
-    public kind: AssertionKind;
-    protected constructor(kind: AssertionKind) {
-        this.kind = kind;
-    }
-}
-
 export function isSeparatingConjunction(assertion: Assertion): assertion is SeparatingConjunctionList {
     return assertion.kind === AssertionKind.SeparatingConjunction;
 }

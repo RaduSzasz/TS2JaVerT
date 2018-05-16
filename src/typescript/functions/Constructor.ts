@@ -1,4 +1,3 @@
-import { Assertion } from "../../assertions/Assertion";
 import { EMPTY_SET, EmptyFields } from "../../assertions/EmptyFields";
 import { FunctionSpec } from "../../assertions/FunctionSpec";
 import { JSObject } from "../../assertions/JSObject";
@@ -28,7 +27,7 @@ export class Constructor extends Function {
         };
     }
 
-    private generatePre(): Assertion {
+    private generatePre(): SeparatingConjunctionList {
         const classVar = this.classVar;
         if (!classVar) {
             throw new Error("Constructors must have associated class variable. Something went wrong!");
@@ -44,7 +43,7 @@ export class Constructor extends Function {
         ]);
     }
 
-    private generatePost(): Assertion {
+    private generatePost(): SeparatingConjunctionList {
         const classVar = this.classVar;
         if (!classVar) {
             throw new Error("Constructors must have associated class variable. Something went wrong!");

@@ -1,5 +1,12 @@
 import { flatMap } from "lodash";
-import { Assertion, AssertionKind, AssertionObject, isSeparatingConjunction } from "./Assertion";
+import {
+    Assertion,
+    AssertionKind,
+    isDisjunction,
+    isSeparatingConjunction,
+} from "./Assertion";
+import { AssertionObject } from "./AssertionObject";
+import { Disjunction } from "./Disjunction";
 import { Emp } from "./Emp";
 
 export class SeparatingConjunctionList extends AssertionObject {
@@ -18,5 +25,21 @@ export class SeparatingConjunctionList extends AssertionObject {
                     .map((conjunct) => conjunct.toString())
                     .filter((strConjunct) => strConjunct)
                     .join(" * ") || (new Emp().toString());
+    }
+
+    public toDisjunctiveNormalForm(): Disjunction {
+        return new Disjunction(
+            this.conjuncts
+                .reduce((prevDisjuncts: Assertion[], conj: Assertion) => {
+                    if (isDisjunction(conj)) {
+                        return flatMap(conj.disjuncts, (disj) =>
+                            prevDisjuncts.map((dnf) =>
+                                new SeparatingConjunctionList([dnf, disj])),
+                        );
+                    }
+                    return prevDisjuncts
+                        .map((dnf) => new SeparatingConjunctionList([dnf, conj]));
+            }, [new SeparatingConjunctionList([])]),
+        );
     }
 }

@@ -1,4 +1,5 @@
-import { AssertionKind, AssertionObject } from "./Assertion";
+import { AssertionKind } from "./Assertion";
+import { AssertionObject } from "./AssertionObject";
 
 export class Emp extends AssertionObject {
     constructor() {

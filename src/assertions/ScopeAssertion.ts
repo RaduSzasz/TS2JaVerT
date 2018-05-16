@@ -1,4 +1,5 @@
-import { AssertionKind, AssertionObject } from "./Assertion";
+import { AssertionKind } from "./Assertion";
+import { AssertionObject } from "./AssertionObject";
 
 export class ScopeAssertion extends AssertionObject {
     constructor(private variable: string, private logicalVariable: string) {

@@ -1,4 +1,5 @@
-import { AssertionKind, AssertionObject } from "./Assertion";
+import { AssertionKind } from "./Assertion";
+import { AssertionObject } from "./AssertionObject";
 
 export class CustomPredicate extends AssertionObject {
     constructor(private predicateName: string, private varName: string) {

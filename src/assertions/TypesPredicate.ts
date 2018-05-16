@@ -1,5 +1,6 @@
 import {TypeFlags} from "../typescript/Types";
-import { AssertionKind, AssertionObject } from "./Assertion";
+import { AssertionKind } from "./Assertion";
+import { AssertionObject } from "./AssertionObject";
 
 const PRIMITIVE_TYPE_NAMES = {
     [TypeFlags.Number]: "Num",
@@ -8,7 +9,12 @@ const PRIMITIVE_TYPE_NAMES = {
     [TypeFlags.Void]: "Undef",
     [TypeFlags.Undefined]: "Undef",
 };
-type PrimitiveType = TypeFlags.Number | TypeFlags.Boolean | TypeFlags.String | TypeFlags.Undefined | TypeFlags.Void;
+export type PrimitiveType =
+    TypeFlags.Number
+    | TypeFlags.Boolean
+    | TypeFlags.String
+    | TypeFlags.Undefined
+    | TypeFlags.Void;
 
 export class TypesPredicate extends AssertionObject {
     constructor(

@@ -1,5 +1,6 @@
 import { Variable } from "../typescript/Variable";
-import { AssertionKind, AssertionObject } from "./Assertion";
+import { AssertionKind } from "./Assertion";
+import { AssertionObject } from "./AssertionObject";
 
 export class DataProp extends AssertionObject {
     constructor(

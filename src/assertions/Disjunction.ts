@@ -1,5 +1,6 @@
 import { flatMap } from "lodash";
-import { Assertion, AssertionKind, AssertionObject, isDisjunction } from "./Assertion";
+import { Assertion, AssertionKind, isDisjunction } from "./Assertion";
+import { AssertionObject } from "./AssertionObject";
 
 export class Disjunction extends AssertionObject {
     public disjuncts: Assertion[];

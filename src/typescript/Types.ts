@@ -1,8 +1,9 @@
 import * as ts from "typescript";
+import { PrimitiveType } from "../assertions/TypesPredicate";
 import { Class } from "./Class";
 import { ObjectLiteral } from "./ObjectLiteral";
 import { Program } from "./Program";
-import {Variable} from "./Variable";
+import { Variable } from "./Variable";
 
 export enum TypeFlags {
     Any,
@@ -22,14 +23,15 @@ export interface Type {
     typeFlag: TypeFlags;
 }
 
-export interface PrimitiveType extends Type {
-    typeFlag: TypeFlags.Void | TypeFlags.Number | TypeFlags.String | TypeFlags.Boolean;
+export interface PrimitiveTypeInterface extends Type {
+    typeFlag: PrimitiveType;
 }
-export function isPrimitiveType(type: Type): type is PrimitiveType {
+export function isPrimitiveType(type: Type): type is PrimitiveTypeInterface {
     return type.typeFlag === TypeFlags.Number ||
         type.typeFlag === TypeFlags.String ||
         type.typeFlag === TypeFlags.Boolean ||
-        type.typeFlag === TypeFlags.Void;
+        type.typeFlag === TypeFlags.Void ||
+        type.typeFlag === TypeFlags.Undefined;
 }
 
 export interface AnyType extends Type {
