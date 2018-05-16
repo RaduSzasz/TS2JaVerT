@@ -5,7 +5,7 @@ class MyMap {
         this.contents = {};
     }
 
-    public get(k: string): number {
+    public get(k: string): number | undefined {
         if (this.contents.hasOwnProperty(k)) {
             return this.contents[k];
         }
