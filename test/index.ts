@@ -18,11 +18,8 @@ describe("A suite for checking if we find identifiers in expressions", () => {
         const funcSpec = func.generateAssertion();
         expect(funcSpec.pre).toBeDefined();
         expect(funcSpec.pre).toEqual(new SeparatingConjunctionList([
-            new SeparatingConjunctionList([]),
-            new SeparatingConjunctionList([
-                new ScopeAssertion("y", "#y"),
-                new TypesPredicate("#y", TypeFlags.Number),
-            ]),
+            new ScopeAssertion("y", "#y"),
+            new TypesPredicate("#y", TypeFlags.Number),
         ]));
     });
 
@@ -38,16 +35,12 @@ describe("A suite for checking if we find identifiers in expressions", () => {
         expect(innerFunc.getName()).toEqual("g");
         const outerFuncSpec = outerFunc.generateAssertion();
         expect(outerFuncSpec.pre).toEqual(new SeparatingConjunctionList([
-            new SeparatingConjunctionList([]),
             new TypesPredicate("x", TypeFlags.Number),
         ]));
         const innerFuncSpec = innerFunc.generateAssertion();
         expect(innerFuncSpec.pre).toEqual(new SeparatingConjunctionList([
-            new SeparatingConjunctionList([]),
-            new SeparatingConjunctionList([
-                new ScopeAssertion("x", "#x"),
-                new TypesPredicate("#x", TypeFlags.Number),
-            ]),
+            new ScopeAssertion("x", "#x"),
+            new TypesPredicate("#x", TypeFlags.Number),
         ]));
     });
 });
