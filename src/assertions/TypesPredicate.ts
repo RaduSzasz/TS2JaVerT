@@ -1,5 +1,5 @@
-import { AssertionKind, AssertionObject } from "./Assertion";
 import {TypeFlags} from "../typescript/Types";
+import { AssertionKind, AssertionObject } from "./Assertion";
 
 const PRIMITIVE_TYPE_NAMES = {
     [TypeFlags.Number]: "Num",

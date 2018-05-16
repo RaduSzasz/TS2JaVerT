@@ -1,9 +1,9 @@
 import { chain, find, isEqual, map } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../assertions/Assertion";
-import { printFunctionSpec } from "../assertions/FunctionSpec";
 import { CustomPredicate } from "../assertions/CustomPredicate";
 import { DataProp } from "../assertions/DataProp";
+import { printFunctionSpec } from "../assertions/FunctionSpec";
 import { JSObject } from "../assertions/JSObject";
 import { NoneAssertion } from "../assertions/NoneAssertion";
 import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";

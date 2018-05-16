@@ -1,6 +1,6 @@
-import { Assertion } from "../Assertion";
 import { Type } from "../../typescript/Types";
 import { Variable } from "../../typescript/Variable";
+import { Assertion } from "../Assertion";
 import { CustomPredicate } from "../CustomPredicate";
 import { DataProp } from "../DataProp";
 import { HardcodedStringAssertion } from "../HardcodedStringAssertion";

@@ -1,6 +1,6 @@
 import { Assertion } from "../../assertions/Assertion";
-import { FunctionSpec } from "../../assertions/FunctionSpec";
 import { EMPTY_SET, EmptyFields } from "../../assertions/EmptyFields";
+import { FunctionSpec } from "../../assertions/FunctionSpec";
 import { JSObject } from "../../assertions/JSObject";
 import { SeparatingConjunctionList } from "../../assertions/SeparatingConjunctionList";
 import { Class } from "../Class";
