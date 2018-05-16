@@ -44,7 +44,8 @@ export class ObjectLiteral {
                     throw new Error(`Cannot find indexing type. Received ${declaration.kind} TS node`);
                 });
                 this.indexSignature = program.addIndexingSignature(indexingType);
-            } else if (value.valueDeclaration && ts.isPropertyDeclaration(value.valueDeclaration)) {
+            } else if (value.valueDeclaration && (ts.isPropertySignature(value.valueDeclaration)
+                || ts.isPropertyDeclaration(value.valueDeclaration))) {
                 this.regularFields.push(Variable.fromDeclaration(value.valueDeclaration, program));
             } else {
                 throw new Error("Unexpected member type in object literal type");

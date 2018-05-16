@@ -4,6 +4,7 @@ import { Assertion } from "../assertions/Assertion";
 import { CustomPredicate } from "../assertions/CustomPredicate";
 import { Disjunction } from "../assertions/Disjunction";
 import { Emp } from "../assertions/Emp";
+import { HardcodedStringAssertion } from "../assertions/HardcodedStringAssertion";
 import { ScopeAssertion } from "../assertions/ScopeAssertion";
 import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";
 import { TypesPredicate } from "../assertions/TypesPredicate";
@@ -13,7 +14,7 @@ import { Program } from "./Program";
 import {
     isAnyType, isClassType,
     isInterfaceType, isObjectLiteralType,
-    isPrimitiveType, isUnionType,
+    isPrimitiveType, isStringLiteralType, isUnionType,
     Type,
     TypeFlags,
     typeFromTSType,
@@ -21,7 +22,7 @@ import {
 
 export class Variable {
     public static fromDeclaration(
-        declaration: ts.ParameterDeclaration | ts.PropertyDeclaration | ts.VariableDeclaration,
+        declaration: ts.ParameterDeclaration | ts.PropertyDeclaration | ts.VariableDeclaration | ts.PropertySignature,
         program: Program,
     ): Variable {
         const checker = program.getTypeChecker();
@@ -67,6 +68,8 @@ export class Variable {
         const { name, type } = this;
         if (isPrimitiveType(type)) {
             return new TypesPredicate(name, type.typeFlag);
+        } else if (isStringLiteralType(type)) {
+            return new HardcodedStringAssertion(`${name} === "${type.str}"`);
         } else if (isAnyType(type)) {
             return new Emp();
         } else if (isInterfaceType(type)) {

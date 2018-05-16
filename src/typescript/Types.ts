@@ -17,6 +17,7 @@ export enum TypeFlags {
     Interface,
     Union,
     Function,
+    StringLiteral,
 }
 
 export interface Type {
@@ -65,6 +66,14 @@ export function isObjectLiteralType(type: Type): type is ObjectLiteralType {
     return type.typeFlag === TypeFlags.ObjectLiteralType;
 }
 
+export interface StringLiteralType extends Type {
+    typeFlag: TypeFlags.StringLiteral;
+    str: string;
+}
+export function isStringLiteralType(type: Type): type is StringLiteralType {
+    return type.typeFlag === TypeFlags.StringLiteral;
+}
+
 export interface FunctionType extends Type {
     typeFlag: TypeFlags.Function;
     params: Variable[];
@@ -100,6 +109,11 @@ export function typeFromTSType(tsTypeNode: ts.TypeNode, program: Program): Type 
             return { typeFlag: TypeFlags.Boolean };
         case ts.TypeFlags.Undefined:
             return { typeFlag: TypeFlags.Undefined };
+        case ts.TypeFlags.StringLiteral:
+            return {
+                str: (tsType as ts.StringLiteralType).value,
+                typeFlag: TypeFlags.StringLiteral,
+            } as StringLiteralType;
         case ts.TypeFlags.Object:
             const symbol = tsType.symbol;
             if (!symbol) {

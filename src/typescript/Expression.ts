@@ -41,12 +41,12 @@ export function visitExpressionForCapturedVars(
     ) {
         return emptyFunctionAnalysis;
     } else if (ts.isIdentifier(node)) {
-        if (find(currentScope, Variable.nameMatcher(node.text))) {
+        if (find(currentScope, Variable.nameMatcher(node.text)) || node.text === "console") {
             return emptyFunctionAnalysis;
         }
         const capturedVar = find(outerScope, Variable.nameMatcher(node.text));
         if (!capturedVar) {
-            throw new Error(`Identifier not present in current or outer scope.`);
+            throw new Error(`Identifier ${node.text} not present in current or outer scope.`);
         }
         return { capturedVars: [capturedVar], funcDef: undefined };
     } else if (ts.isPropertyAccessExpression(node)) {
@@ -93,6 +93,8 @@ export function visitExpressionForCapturedVars(
     } else if (ts.isNewExpression(node)) {
         return map(node.arguments, visitExpressionPreservingTypeEnvs)
                 .reduce(reduceExpressionAnalysis, emptyFunctionAnalysis);
+    } else if (ts.isAsExpression(node)) {
+        return visitExpressionPreservingTypeEnvs(node.expression);
     }
     throw new Error(`Node of kind ${node.kind} is not an expected Expression`);
 }
