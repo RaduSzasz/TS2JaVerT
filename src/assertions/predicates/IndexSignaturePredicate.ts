@@ -1,19 +1,19 @@
 import { Assertion } from "../Assertion";
-import { Type } from "../typescript/Types";
-import { Variable } from "../typescript/Variable";
-import { CustomPredicate } from "./CustomPredicate";
-import { DataProp } from "./DataProp";
-import { HardcodedStringAssertion } from "./HardcodedStringAssertion";
-import { SeparatingConjunctionList } from "./SeparatingConjunctionList";
+import { Type } from "../../typescript/Types";
+import { Variable } from "../../typescript/Variable";
+import { CustomPredicate } from "../CustomPredicate";
+import { DataProp } from "../DataProp";
+import { HardcodedStringAssertion } from "../HardcodedStringAssertion";
+import { SeparatingConjunctionList } from "../SeparatingConjunctionList";
 
-export class IndexSignaturePredicate implements Assertion {
+export class IndexSignaturePredicate {
     constructor(private name: string, private type: Type) { }
 
     public toAssertion(varName: string, fields: string): Assertion {
         return new CustomPredicate(this.name, `${varName}, ${fields}`);
     }
 
-    public toString(): string {
+    public getPredicate(): string {
         const o = "o";
         const allFields = "fields";
         const fieldName = "#f";

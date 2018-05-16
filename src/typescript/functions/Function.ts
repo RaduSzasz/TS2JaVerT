@@ -1,9 +1,9 @@
 import { compact } from "lodash";
 import * as uuid from "uuid";
-import { Assertion } from "../../Assertion";
-import { FunctionSpec } from "../../FunctionSpec";
-import { FunctionObject } from "../../predicates/FunctionObject";
-import { SeparatingConjunctionList } from "../../predicates/SeparatingConjunctionList";
+import { Assertion } from "../../assertions/Assertion";
+import { FunctionSpec } from "../../assertions/FunctionSpec";
+import { FunctionObject } from "../../assertions/FunctionObject";
+import { SeparatingConjunctionList } from "../../assertions/SeparatingConjunctionList";
 import { Class } from "../Class";
 import { Program } from "../Program";
 import { Type, typeFromParamAndReturnType } from "../Types";

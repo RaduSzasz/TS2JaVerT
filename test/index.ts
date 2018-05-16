@@ -1,9 +1,9 @@
-import { CustomPredicate } from "../src/assertions/predicates/CustomPredicate";
-import { ScopePredicate } from "../src/assertions/predicates/ScopePredicate";
-import { SeparatingConjunctionList } from "../src/assertions/predicates/SeparatingConjunctionList";
-import { TypesPredicate } from "../src/assertions/predicates/TypesPredicate";
-import { Program } from "../src/assertions/typescript/Program";
-import { TypeFlags } from "../src/assertions/typescript/Types";
+import { CustomPredicate } from "../src/assertions/CustomPredicate";
+import { ScopeAssertion } from "../src/assertions/ScopeAssertion";
+import { SeparatingConjunctionList } from "../src/assertions/SeparatingConjunctionList";
+import { TypesPredicate } from "../src/assertions/TypesPredicate";
+import { Program } from "../src/typescript/Program";
+import { TypeFlags } from "../src/typescript/Types";
 
 describe("A suite for checking if we find identifiers in expressions", () => {
     it("should find identifier in return statement", () => {
@@ -20,7 +20,7 @@ describe("A suite for checking if we find identifiers in expressions", () => {
         expect(funcSpec.pre).toEqual(new SeparatingConjunctionList([
             new SeparatingConjunctionList([]),
             new SeparatingConjunctionList([
-                new ScopePredicate("y", "#y"),
+                new ScopeAssertion("y", "#y"),
                 new TypesPredicate("#y", TypeFlags.Number),
             ]),
         ]));
@@ -45,7 +45,7 @@ describe("A suite for checking if we find identifiers in expressions", () => {
         expect(innerFuncSpec.pre).toEqual(new SeparatingConjunctionList([
             new SeparatingConjunctionList([]),
             new SeparatingConjunctionList([
-                new ScopePredicate("x", "#x"),
+                new ScopeAssertion("x", "#x"),
                 new TypesPredicate("#x", TypeFlags.Number),
             ]),
         ]));

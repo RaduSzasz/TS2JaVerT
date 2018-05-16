@@ -1,10 +1,10 @@
 import { flatMap, flatten, map } from "lodash";
 import * as ts from "typescript";
-import { Assertion } from "../Assertion";
-import { printFunctionSpec } from "../FunctionSpec";
-import { ForbiddenPredicate } from "../predicates/ForbiddenPredicate";
-import { IndexSignaturePredicate } from "../predicates/IndexSignaturePredicate";
-import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
+import { Assertion } from "../assertions/Assertion";
+import { printFunctionSpec } from "../assertions/FunctionSpec";
+import { ForbiddenPredicate } from "../assertions/predicates/ForbiddenPredicate";
+import { IndexSignaturePredicate } from "../assertions/predicates/IndexSignaturePredicate";
+import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";
 import { Class } from "./Class";
 import { Function } from "./functions/Function";
 import { Interface } from "./Interface";

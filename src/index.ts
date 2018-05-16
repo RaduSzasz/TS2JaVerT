@@ -1,5 +1,5 @@
 import * as yargs from "yargs";
-import { Program } from "./assertions/typescript/Program";
+import { Program } from "./typescript/Program";
 
 const args = yargs
     .requiresArg("input")

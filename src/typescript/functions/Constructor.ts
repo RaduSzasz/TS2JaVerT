@@ -1,8 +1,8 @@
-import { Assertion } from "../../Assertion";
-import { FunctionSpec } from "../../FunctionSpec";
-import { EMPTY_SET, EmptyFields } from "../../predicates/EmptyFields";
-import { JSObject } from "../../predicates/JSObject";
-import { SeparatingConjunctionList } from "../../predicates/SeparatingConjunctionList";
+import { Assertion } from "../../assertions/Assertion";
+import { FunctionSpec } from "../../assertions/FunctionSpec";
+import { EMPTY_SET, EmptyFields } from "../../assertions/EmptyFields";
+import { JSObject } from "../../assertions/JSObject";
+import { SeparatingConjunctionList } from "../../assertions/SeparatingConjunctionList";
 import { Class } from "../Class";
 import { Program } from "../Program";
 import { Type } from "../Types";

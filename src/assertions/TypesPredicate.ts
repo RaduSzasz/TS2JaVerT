@@ -1,4 +1,4 @@
-import {Assertion} from "../Assertion";
+import { AssertionKind, AssertionObject } from "./Assertion";
 import {TypeFlags} from "../typescript/Types";
 
 const PRIMITIVE_TYPE_NAMES = {
@@ -10,11 +10,13 @@ const PRIMITIVE_TYPE_NAMES = {
 };
 type PrimitiveType = TypeFlags.Number | TypeFlags.Boolean | TypeFlags.String | TypeFlags.Undefined | TypeFlags.Void;
 
-export class TypesPredicate implements Assertion {
+export class TypesPredicate extends AssertionObject {
     constructor(
         private name: string,
         private typeFlag: PrimitiveType,
-    ) { }
+    ) {
+        super(AssertionKind.Types);
+    }
 
     public toString() {
         return `types(${this.name}: ${PRIMITIVE_TYPE_NAMES[this.typeFlag]})`;

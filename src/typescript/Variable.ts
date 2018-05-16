@@ -1,12 +1,12 @@
 import * as ts from "typescript";
 import * as uuid from "uuid";
-import { Assertion } from "../Assertion";
-import { CustomPredicate } from "../predicates/CustomPredicate";
-import { Disjunction } from "../predicates/Disjunction";
-import { Emp } from "../predicates/Emp";
-import { ScopePredicate } from "../predicates/ScopePredicate";
-import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
-import { TypesPredicate } from "../predicates/TypesPredicate";
+import { Assertion } from "../assertions/Assertion";
+import { CustomPredicate } from "../assertions/CustomPredicate";
+import { Disjunction } from "../assertions/Disjunction";
+import { Emp } from "../assertions/Emp";
+import { ScopeAssertion } from "../assertions/ScopeAssertion";
+import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";
+import { TypesPredicate } from "../assertions/TypesPredicate";
 import { Class } from "./Class";
 import { Function } from "./functions/Function";
 import { Program } from "./Program";
@@ -85,7 +85,7 @@ export class Variable {
     public toAssertionExtractingScope(): Assertion {
         const logicalVariable = Variable.logicalVariableFromVariable(this);
         return new SeparatingConjunctionList([
-            new ScopePredicate(this.name, logicalVariable.name),
+            new ScopeAssertion(this.name, logicalVariable.name),
             logicalVariable.toAssertion(),
         ]);
     }

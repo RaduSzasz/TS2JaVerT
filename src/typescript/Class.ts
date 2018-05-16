@@ -1,12 +1,12 @@
 import { chain, find, isEqual, map } from "lodash";
 import * as ts from "typescript";
-import { Assertion } from "../Assertion";
-import { printFunctionSpec } from "../FunctionSpec";
-import { CustomPredicate } from "../predicates/CustomPredicate";
-import { DataProp } from "../predicates/DataProp";
-import { JSObject } from "../predicates/JSObject";
-import { NonePredicate } from "../predicates/NonePredicate";
-import { SeparatingConjunctionList } from "../predicates/SeparatingConjunctionList";
+import { Assertion } from "../assertions/Assertion";
+import { printFunctionSpec } from "../assertions/FunctionSpec";
+import { CustomPredicate } from "../assertions/CustomPredicate";
+import { DataProp } from "../assertions/DataProp";
+import { JSObject } from "../assertions/JSObject";
+import { NoneAssertion } from "../assertions/NoneAssertion";
+import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";
 import { visitExpressionForCapturedVars } from "./Expression";
 import { Function } from "./functions/Function";
 import { createAndAnalyseFunction } from "./functions/FunctionCreator";
@@ -139,7 +139,7 @@ export class Class {
         const predDef = `${this.getProtoPredicateName()}(${currProto}, ${parentProto})`;
         const predicate = new SeparatingConjunctionList([
             new JSObject(currProto, parentProto),
-            ...fPlus.map((field) => new NonePredicate(currProto, field)),
+            ...fPlus.map((field) => new NoneAssertion(currProto, field)),
             ...this.methods.map((method) => new SeparatingConjunctionList([
                 new DataProp(currProto, method.getName(), Variable.logicalVariableFromVariable(method)),
                 Function.logicalVariableFromFunction(method).toAssertion(),
@@ -159,7 +159,7 @@ export class Class {
         ${this.getInstancePredicateName()}(${o}, ${proto}):
             ${new SeparatingConjunctionList([
             new JSObject(o, proto),
-            ...nPlus.map((namedMethod) => new NonePredicate(o, namedMethod)),
+            ...nPlus.map((namedMethod) => new NoneAssertion(o, namedMethod)),
             ...this.properties.map((prop) => new SeparatingConjunctionList([
                 new DataProp(o, prop.name, Variable.logicalVariableFromVariable(prop)),
                 Variable.logicalVariableFromVariable(prop).toAssertion(),

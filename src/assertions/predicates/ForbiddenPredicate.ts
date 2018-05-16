@@ -1,12 +1,13 @@
-import { NonePredicate } from "./NonePredicate";
-import { SeparatingConjunctionList } from "./SeparatingConjunctionList";
+import { AssertionKind, AssertionObject } from "../Assertion";
+import { NoneAssertion } from "../NoneAssertion";
+import { SeparatingConjunctionList } from "../SeparatingConjunctionList";
 
-export class ForbiddenPredicate {
+export class ForbiddenPredicate extends AssertionObject {
     public static toPredicate(): string {
         const o = "o";
         const def = new SeparatingConjunctionList(
             ForbiddenPredicate.FORBIDDEN_FIELD_NAMES.map((forbiddenField) =>
-                new NonePredicate(o, forbiddenField)));
+                new NoneAssertion(o, forbiddenField)));
         return `
         ${ForbiddenPredicate.PREDICATE_NAME}(${o}) =
             ${def}
@@ -18,7 +19,9 @@ export class ForbiddenPredicate {
         "hasOwnProperty",
     ];
 
-    constructor(private o: string) { }
+    constructor(private o: string) {
+        super(AssertionKind.ForbiddenFields);
+    }
 
     public toString(): string {
         return `AbsentFields(${this.o})`;
