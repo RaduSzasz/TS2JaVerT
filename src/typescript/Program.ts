@@ -225,7 +225,7 @@ export class Program {
         return (src: ts.SourceFile) => {
             const predicates = [
                 ForbiddenPredicate.toPredicate(),
-                ...map(this.indexSignatures, (i) => i.toString()),
+                ...map(this.indexSignatures, (i) => i.getPredicate()),
                 ...map(this.interfaces, (i) => i.toPredicate()),
                 ...flatMap(this.classes, (cls) => [cls.getInstancePredicate(), cls.getProtoPredicate()]),
             ].join("\n\n");
