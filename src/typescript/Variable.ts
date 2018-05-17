@@ -33,6 +33,7 @@ export class Variable {
         } else if (!declaration.type) {
             throw new Error("Cannot create Variable! Property declaration has no associated type node");
         }
+
         return new Variable(nameSymbol.name, typeFromTSType(declaration.type, program));
     }
 
@@ -60,9 +61,6 @@ export class Variable {
         return false;
     }
 
-    public getType(): Type {
-        return this.type;
-    }
 
     public toAssertion(): Assertion {
         const { name, type } = this;
