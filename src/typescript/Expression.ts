@@ -42,7 +42,10 @@ export function visitExpressionForCapturedVars(
     ) {
         return emptyFunctionAnalysis;
     } else if (ts.isIdentifier(node)) {
-        if (find(currentScope, Variable.nameMatcher(node.text)) || node.originalKeywordKind) {
+        if (find(currentScope, Variable.nameMatcher(node.text)) ||
+                node.originalKeywordKind ||
+                node.text === "console"
+        ) {
             return emptyFunctionAnalysis;
         }
         const capturedVar = find(outerScope, Variable.nameMatcher(node.text));

@@ -3,6 +3,7 @@ import * as ts from "typescript";
 import { Assertion } from "../assertions/Assertion";
 import { CustomPredicate } from "../assertions/CustomPredicate";
 import { DataProp } from "../assertions/DataProp";
+import { Disjunction } from "../assertions/Disjunction";
 import { printFunctionSpec } from "../assertions/FunctionSpec";
 import { JSObject } from "../assertions/JSObject";
 import { NoneAssertion } from "../assertions/NoneAssertion";
@@ -155,16 +156,17 @@ export class Class {
         const o = "o";
         const proto = "proto";
         const nPlus = this.determineNPlus();
-        return `
-        ${this.getInstancePredicateName()}(${o}, ${proto}):
-            ${new SeparatingConjunctionList([
+        const predAssertion: Disjunction = new SeparatingConjunctionList([
             new JSObject(o, proto),
-            ...nPlus.map((namedMethod) => new NoneAssertion(o, namedMethod)),
+            ...nPlus.map((namedMethod: string) => new NoneAssertion(o, namedMethod)),
             ...this.properties.map((prop) => new SeparatingConjunctionList([
                 new DataProp(o, prop.name, Variable.logicalVariableFromVariable(prop)),
                 Variable.logicalVariableFromVariable(prop).toAssertion(),
             ])),
-        ]).toString()}
+        ]).toDisjunctiveNormalForm();
+        return `
+        ${this.getInstancePredicateName()}(${o}, ${proto}):
+            ${predAssertion.disjuncts.map((def) => def.toString()).join(",\n")}
 `;
     }
 
