@@ -53,7 +53,7 @@ export class ObjectLiteral {
         }));
     }
 
-    public toAssertion(o: string): Assertion {
+    public toAssertion(o: string): SeparatingConjunctionList {
         // The type of o is irrelevant; we will never use it
         return new SeparatingConjunctionList(compact([
             this.getObjectAssertion(o),

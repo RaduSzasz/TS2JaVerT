@@ -97,50 +97,49 @@ export function typeFromTSType(tsTypeNode: ts.TypeNode, program: Program): Type 
             types: tsTypeNode.types.map((t) => typeFromTSType(t, program)),
         } as UnionType;
         return returnVal;
-    }
-    switch (tsType.flags) {
-        case ts.TypeFlags.Number:
-            return { typeFlag: TypeFlags.Number };
-        case ts.TypeFlags.Void:
-            return { typeFlag: TypeFlags.Void };
-        case ts.TypeFlags.String:
-            return { typeFlag: TypeFlags.String };
-        case ts.TypeFlags.Boolean:
-            return { typeFlag: TypeFlags.Boolean };
-        case ts.TypeFlags.Undefined:
-            return { typeFlag: TypeFlags.Undefined };
-        case ts.TypeFlags.StringLiteral:
+        /* tslint:disable:no-bitwise */
+    } else if (tsType.flags & ts.TypeFlags.Number) {
+        return { typeFlag: TypeFlags.Number };
+    } else if (tsType.flags & ts.TypeFlags.Void) {
+        return { typeFlag: TypeFlags.Void };
+    } else if (tsType.flags & ts.TypeFlags.String) {
+        return { typeFlag: TypeFlags.String };
+    } else if (tsType.flags & ts.TypeFlags.Boolean) {
+        return { typeFlag: TypeFlags.Boolean };
+    } else if (tsType.flags & ts.TypeFlags.Undefined) {
+        return { typeFlag: TypeFlags.Undefined };
+    } else if (tsType.flags & ts.TypeFlags.StringLiteral) {
+        return {
+            str: (tsType as ts.StringLiteralType).value,
+            typeFlag: TypeFlags.StringLiteral,
+        } as StringLiteralType;
+    } else if (tsType.flags & ts.TypeFlags.Object) {
+        const symbol = tsType.symbol;
+        if (!symbol) {
+            throw new Error("Cannot create type from TS type. No symbol associated with the TS Type");
+        }
+        if (symbol.flags === ts.SymbolFlags.TypeLiteral) {
+            if (!symbol.members) {
+                throw new Error("TS Object Literal symbol has no associated members");
+            }
+            const objectLiteralType = new ObjectLiteral(symbol.members, program);
             return {
-                str: (tsType as ts.StringLiteralType).value,
-                typeFlag: TypeFlags.StringLiteral,
-            } as StringLiteralType;
-        case ts.TypeFlags.Object:
-            const symbol = tsType.symbol;
-            if (!symbol) {
-                throw new Error("Cannot create type from TS type. No symbol associated with the TS Type");
-            }
-            if (symbol.flags === ts.SymbolFlags.TypeLiteral) {
-                if (!symbol.members) {
-                    throw new Error("TS Object Literal symbol has no associated members");
-                }
-                const objectLiteralType = new ObjectLiteral(symbol.members, program);
-                return {
-                    objectLiteralType,
-                    typeFlag: TypeFlags.ObjectLiteralType,
-                } as ObjectLiteralType;
-            } else if (symbol.flags === ts.SymbolFlags.Interface) {
-                return {
-                    name: symbol.getName(),
-                    typeFlag: TypeFlags.Interface,
-                } as InterfaceType;
-            } else if (symbol.flags === ts.SymbolFlags.Class) {
-                return {
-                    cls: program.getClass(symbol.getName()),
-                    typeFlag: TypeFlags.Class,
-                } as ClassType;
-            }
-            break;
+                objectLiteralType,
+                typeFlag: TypeFlags.ObjectLiteralType,
+            } as ObjectLiteralType;
+        } else if (symbol.flags === ts.SymbolFlags.Interface) {
+            return {
+                name: symbol.getName(),
+                typeFlag: TypeFlags.Interface,
+            } as InterfaceType;
+        } else if (symbol.flags === ts.SymbolFlags.Class) {
+            return {
+                cls: program.getClass(symbol.getName()),
+                typeFlag: TypeFlags.Class,
+            } as ClassType;
+        }
     }
+    /* tslint:enable:no-bitwise */
     throw new Error(`Unexpected TypeScript type: ${tsType.flags}!`);
 }
 

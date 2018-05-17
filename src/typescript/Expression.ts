@@ -37,11 +37,12 @@ export function visitExpressionForCapturedVars(
     if (!node ||
         ts.isStringLiteral(node) ||
         ts.isNumericLiteral(node) ||
+        node.kind === ts.SyntaxKind.TrueKeyword || node.kind === ts.SyntaxKind.FalseKeyword ||
         (ts.isToken(node) && node.kind === ts.SyntaxKind.ThisKeyword)
     ) {
         return emptyFunctionAnalysis;
     } else if (ts.isIdentifier(node)) {
-        if (find(currentScope, Variable.nameMatcher(node.text)) || node.text === "console") {
+        if (find(currentScope, Variable.nameMatcher(node.text)) || node.originalKeywordKind) {
             return emptyFunctionAnalysis;
         }
         const capturedVar = find(outerScope, Variable.nameMatcher(node.text));

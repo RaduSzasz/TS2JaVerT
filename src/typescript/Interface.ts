@@ -24,7 +24,11 @@ export class Interface {
         const o = "o";
         return `
         ${this.name}(${o}) :
-            ${this.objectLiteral.toAssertion(o)}
+            ${this.objectLiteral
+            .toAssertion(o)
+            .toDisjunctiveNormalForm().disjuncts
+            .map((def) => def.toString())
+            .join(",\n")}
 `;
     }
 

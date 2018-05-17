@@ -4,6 +4,7 @@ import { Assertion } from "../assertions/Assertion";
 import { CustomPredicate } from "../assertions/CustomPredicate";
 import { Disjunction } from "../assertions/Disjunction";
 import { Emp } from "../assertions/Emp";
+import { FunctionObject } from "../assertions/FunctionObject";
 import { HardcodedStringAssertion } from "../assertions/HardcodedStringAssertion";
 import { ScopeAssertion } from "../assertions/ScopeAssertion";
 import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";
@@ -61,7 +62,6 @@ export class Variable {
         return false;
     }
 
-
     public toAssertion(): Assertion {
         const { name, type } = this;
         if (isPrimitiveType(type)) {
@@ -84,6 +84,9 @@ export class Variable {
     }
 
     public toAssertionExtractingScope(): Assertion {
+        if (this.isFunction()) {
+            return new FunctionObject(this.name, this.id);
+        }
         const logicalVariable = Variable.logicalVariableFromVariable(this);
         return new SeparatingConjunctionList([
             new ScopeAssertion(this.name, logicalVariable.name),

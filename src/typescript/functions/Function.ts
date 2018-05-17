@@ -20,8 +20,8 @@ export class Function extends Variable {
             func.id);
     }
 
+    public readonly id: string;
     private capturedVars: Variable[] | undefined;
-    private readonly id: string;
 
     constructor(protected program: Program,
                 private returnType: Type,
@@ -87,7 +87,7 @@ export class Function extends Variable {
         const paramAssertions: Assertion[] = this.params.map((param) => param.toAssertion());
         const capturedVariableAssertions: Assertion[]
             = this.capturedVars
-                    .map((capturedVar) => capturedVar.toAssertionExtractingScope());
+                .map((capturedVar) => capturedVar.toAssertionExtractingScope());
 
         return new SeparatingConjunctionList(compact([
             protoAssertion,
