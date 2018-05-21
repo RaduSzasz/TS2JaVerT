@@ -11,6 +11,7 @@ export function visitStatementToFindDeclaredVars(
     node: ts.Node | undefined,
     program: Program,
 ): Variable[] {
+    const visitStatement = (n: ts.Node | undefined) => visitStatementToFindDeclaredVars(n, program);
     if (!node ||
         ts.isClassDeclaration(node) ||
         ts.isInterfaceDeclaration(node) ||
@@ -19,24 +20,32 @@ export function visitStatementToFindDeclaredVars(
     ) {
         return [];
     } else if (ts.isVariableStatement(node)) {
-        return visitStatementToFindDeclaredVars(node.declarationList, program);
+        return visitStatement(node.declarationList);
     } else if (ts.isVariableDeclarationList(node)) {
-        return flatten(
-            node.declarations.map((declaration) => visitStatementToFindDeclaredVars(declaration, program)),
-        );
+        return flatMap(node.declarations, visitStatement);
     } else if (ts.isVariableDeclaration(node)) {
-        return [Variable.fromDeclaration(node, program)];
+        const declaredVar = Variable.fromDeclaration(node, program);
+        if (node.initializer) {
+            if (node.parent && ts.isVariableDeclarationList(node.parent) &&
+                node.parent.parent && ts.isVariableStatement(node.parent.parent)) {
+
+                program.addAssignment(node.parent.parent, declaredVar);
+            } else {
+                throw new Error("Variable declaration was not child of variable statement. Something went wrong");
+            }
+        }
+        return [declaredVar];
     } else if (ts.isFunctionDeclaration(node)) {
         return [createAndAnalyseFunction(node, program)];
     } else if (ts.isIfStatement(node)) {
         return [
-            ...visitStatementToFindDeclaredVars(node.thenStatement, program),
-            ...visitStatementToFindDeclaredVars(node.elseStatement, program),
+            ...visitStatement(node.thenStatement),
+            ...visitStatement(node.elseStatement),
         ];
     } else if (ts.isWhileStatement(node)) {
-        return visitStatementToFindDeclaredVars(node.statement, program);
+        return visitStatement(node.statement);
     } else if (ts.isBlock(node)) {
-        return flatMap(node.statements, (n) => visitStatementToFindDeclaredVars(n, program));
+        return flatMap(node.statements, visitStatement);
     }
     throw new Error(`Unexpected node type ${node.kind} when looking for declared vars`);
 }
@@ -55,7 +64,7 @@ export function visitStatementToFindCapturedVars(
     } else if (ts.isVariableStatement(node)) {
         return visitStatement(node.declarationList);
     } else if (ts.isVariableDeclarationList(node)) {
-        return uniq(flatten(node.declarations.map(visitStatement)));
+        return uniq(flatMap(node.declarations, visitStatement));
     } else if (ts.isVariableDeclaration(node)) {
         if (node.initializer) {
             const expressionAnalysis =

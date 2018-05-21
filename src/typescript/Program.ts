@@ -15,14 +15,15 @@ import { Variable } from "./Variable";
 
 export class Program {
     private program: ts.Program;
-    private sourceFileNode: ts.SourceFile;
+    private readonly sourceFileNode: ts.SourceFile;
 
     private classes: { [className: string]: Class } = {};
     private interfaces: { [interfaceName: string]: Interface } = {};
     private indexSignatures: { [name: string]: IndexSignaturePredicate } = {};
     private functions: { [nodePos: number]: Function } = {};
+    private assignments: { [nodePos: number]: Variable } = {};
     private indexSigCnt = 0;
-    private gamma: Variable[];
+    private readonly gamma: Variable[];
 
     constructor(fileName: string, options?: ts.CompilerOptions) {
         this.program = ts.createProgram([fileName], options || {});
@@ -74,6 +75,10 @@ export class Program {
         ]);
     }
 
+    public addAssignment(node: ts.Node, variable: Variable): void {
+        this.assignments[node.pos] = variable;
+    }
+
     public print(): void {
         this.program.emit(this.sourceFileNode,
             undefined,
@@ -83,6 +88,7 @@ export class Program {
                 before: [
                     this.addPredicates,
                     this.addFunctionSpecTopLevel,
+                    this.addAssignmentAssertions,
                 ],
             }),
         );
@@ -111,6 +117,41 @@ export class Program {
                 [],
                 this.gamma),
             );
+    }
+
+    private addAssignmentAssertionsVisitor: ts.Visitor = (node: ts.Node) => {
+        if (this.assignments[node.pos]) {
+            const varAssigned = this.assignments[node.pos];
+            if (ts.isVariableStatement(node)) {
+                return ts.addSyntheticTrailingComment(ts.createVariableStatement(node.modifiers,
+                    ts.createVariableDeclarationList(node.declarationList.declarations.map((declaration) => {
+                        const initializer = declaration.initializer;
+                        if (initializer && ts.isFunctionExpression(initializer)) {
+                            return ts.updateVariableDeclaration(declaration,
+                                declaration.name,
+                                declaration.type,
+                                ts.updateFunctionExpression(initializer,
+                                    initializer.modifiers,
+                                    initializer.asteriskToken,
+                                    initializer.name,
+                                    initializer.typeParameters,
+                                    initializer.parameters,
+                                    initializer.type,
+                                    ts.createBlock(ts.visitNodes(
+                                        initializer.body.statements,
+                                        this.addAssignmentAssertionsVisitor,
+                                    ))),
+                            );
+                        }
+                        return declaration;
+                    }))),
+                    ts.SyntaxKind.MultiLineCommentTrivia,
+                    varAssigned.toAssertion().toString(),
+                    true,
+                );
+            }
+        }
+        return node;
     }
 
     private addFunctionSpecVisitor: ts.Visitor = (node: ts.Node) => {
@@ -220,6 +261,9 @@ export class Program {
 
     private addFunctionSpecTopLevel: ts.TransformerFactory<ts.SourceFile> = (context) =>
         (src) => ts.visitEachChild(src, this.addFunctionSpecVisitor, context)
+
+    private addAssignmentAssertions: ts.TransformerFactory<ts.SourceFile> = (context) =>
+        (src) => ts.visitEachChild(src, this.addAssignmentAssertionsVisitor, context)
 
     private addPredicates = (): ts.Transformer<ts.SourceFile> => {
         return (src: ts.SourceFile) => {
