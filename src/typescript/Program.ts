@@ -120,7 +120,7 @@ export class Program {
 
     private addFunctionSpecVisitor: ts.Visitor = (node: ts.Node) => {
         const funcVar = this.functions.get(node);
-        const assignedVar = this.functions.get(node);
+        const assignedVar = this.assignments.get(node);
         if (funcVar && ts.isFunctionDeclaration(node)) {
             return ts.addSyntheticLeadingComment(ts.updateFunctionDeclaration(node,
                     node.decorators,
