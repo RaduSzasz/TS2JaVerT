@@ -8,7 +8,11 @@ import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionLi
 import { Class } from "./Class";
 import { Function } from "./functions/Function";
 import { Interface } from "./Interface";
-import { visitStatementToFindCapturedVars, visitStatementToFindDeclaredVars } from "./Statement";
+import {
+    visitStatementToFindAssignments,
+    visitStatementToFindCapturedVars,
+    visitStatementToFindDeclaredVars,
+} from "./Statement";
 import { createCustomTransformers } from "./transformers/FileContext";
 import { Type } from "./Types";
 import { Variable } from "./Variable";
@@ -21,7 +25,7 @@ export class Program {
     private interfaces: { [interfaceName: string]: Interface } = {};
     private indexSignatures: { [name: string]: IndexSignaturePredicate } = {};
     private functions: Map<ts.Node, Function> = new Map();
-    private assignments: Map<ts.Node, Variable> = new Map();
+    private assignments: Map<ts.Node, Variable[]> = new Map();
     private indexSigCnt = 0;
     private readonly gamma: Variable[];
 
@@ -40,6 +44,7 @@ export class Program {
                     .map((statement) => visitStatementToFindDeclaredVars(statement, this)),
         );
 
+        this.annotateAssignments();
         this.determineCapturedVars();
     }
 
@@ -75,8 +80,11 @@ export class Program {
         ]);
     }
 
-    public addAssignment(node: ts.Node, variable: Variable): void {
-        this.assignments.set(node, variable);
+    public addAssignments(node: ts.Node, variables: Variable[]): void {
+        if (variables.length) {
+            const nodeAssignments = this.assignments.get(node) || [];
+            this.assignments.set(node, nodeAssignments.concat(variables));
+        }
     }
 
     public print(): void {
@@ -108,6 +116,14 @@ export class Program {
         Class.resolveAncestorsAndDescendents(this.classes);
     }
 
+    private annotateAssignments(): void {
+        this.sourceFileNode.statements
+            .forEach((statement) => visitStatementToFindAssignments(
+                statement,
+                this,
+                [],
+                this.gamma));
+    }
     private determineCapturedVars(): void {
         this.sourceFileNode.statements
             .forEach((statement) => visitStatementToFindCapturedVars(
@@ -120,7 +136,7 @@ export class Program {
 
     private addFunctionSpecVisitor: ts.Visitor = (node: ts.Node) => {
         const funcVar = this.functions.get(node);
-        const assignedVar = this.assignments.get(node);
+        const assignedVars = this.assignments.get(node);
         if (funcVar && ts.isFunctionDeclaration(node)) {
             return ts.addSyntheticLeadingComment(ts.updateFunctionDeclaration(node,
                     node.decorators,
@@ -166,13 +182,33 @@ export class Program {
                     true)
                 : annotatedNode;
 
-            return assignedVar
+            return assignedVars
                 ? ts.addSyntheticTrailingComment(functionCommentedNode,
                     ts.SyntaxKind.MultiLineCommentTrivia,
-                    assignedVar.toAssertion().toString(),
+                    new SeparatingConjunctionList(
+                        assignedVars.map((assignedVar) => assignedVar.toAssertion()),
+                    ).toString(),
                     true)
                 : functionCommentedNode;
 
+        } else if (ts.isExpressionStatement(node)) {
+            const annotatedNode = ts.updateStatement(node, ts.visitNode(node.expression, this.addFunctionSpecVisitor));
+
+            const functionCommentedNode = funcVar
+                ? ts.addSyntheticLeadingComment(annotatedNode,
+                    ts.SyntaxKind.MultiLineCommentTrivia,
+                    printFunctionSpec(funcVar.generateAssertion()),
+                    true)
+                : annotatedNode;
+
+            return assignedVars
+                ? ts.addSyntheticTrailingComment(functionCommentedNode,
+                    ts.SyntaxKind.MultiLineCommentTrivia,
+                    new SeparatingConjunctionList(
+                        assignedVars.map((assignedVar) => assignedVar.toAssertion()),
+                    ).toString(),
+                    true)
+                : functionCommentedNode;
         } else if (ts.isClassDeclaration(node)) {
             return ts.updateClassDeclaration(
                 node,

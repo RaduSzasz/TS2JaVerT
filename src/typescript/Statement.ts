@@ -1,9 +1,13 @@
 import { difference, find, flatMap, flatten, uniq } from "lodash";
 import * as ts from "typescript";
 import { Class } from "./Class";
-import { visitExpressionForCapturedVars } from "./Expression";
+import { visitExpressionForCapturedVars, visitExpressionToFindAssignments } from "./Expression";
 import { Function } from "./functions/Function";
-import { createAndAnalyseFunction, setCapturedVars } from "./functions/FunctionCreator";
+import {
+    createAndAnalyseFunction,
+    getFunctionScope,
+    setCapturedVars,
+} from "./functions/FunctionCreator";
 import { Program } from "./Program";
 import {Variable} from "./Variable";
 
@@ -29,7 +33,7 @@ export function visitStatementToFindDeclaredVars(
             if (node.parent && ts.isVariableDeclarationList(node.parent) &&
                 node.parent.parent && ts.isVariableStatement(node.parent.parent)) {
 
-                program.addAssignment(node.parent.parent, declaredVar);
+                program.addAssignments(node.parent.parent, [declaredVar]);
             } else {
                 throw new Error("Variable declaration was not child of variable statement. Something went wrong");
             }
@@ -106,9 +110,75 @@ export function visitStatementToFindCapturedVars(
     } else if (ts.isReturnStatement(node)) {
         return visitExpressionForCapturedVars(node.expression, outerScope, currentScope, program).capturedVars;
     } else if (ts.isExpressionStatement(node)) {
-        return visitExpressionForCapturedVars(node.expression, outerScope, currentScope, program).capturedVars;
+        const expressionAnalysis =
+            visitExpressionForCapturedVars(node.expression, outerScope, currentScope, program);
+
+        if (expressionAnalysis.funcDef) {
+            program.addFunction(node, expressionAnalysis.funcDef);
+        }
+
+        return expressionAnalysis.capturedVars;
     } else if (ts.isBlock(node)) {
         return uniq(flatMap(node.statements, visitStatement));
     }
     throw new Error(`Unexpected node type ${node.kind} in visitStatementAndExtractVars`);
+}
+
+export function visitStatementToFindAssignments(
+    node: ts.Node | undefined,
+    program: Program,
+    outerScope: Variable[],
+    currentScope: Variable[]): void {
+
+    const checker = program.getTypeChecker();
+    const visitStatement = (n: ts.Node | undefined) =>
+        visitStatementToFindAssignments(n, program, outerScope, currentScope);
+
+    if (!node || ts.isInterfaceDeclaration(node)) {
+        return;
+    } else if (ts.isVariableStatement(node)) {
+        visitStatement(node.declarationList);
+    } else if (ts.isVariableDeclarationList(node)) {
+        node.declarations.forEach(visitStatement);
+    } else if (ts.isVariableDeclaration(node)) {
+        if (node.initializer) {
+            /// TODO: Expression visiting
+        }
+    } else if (ts.isFunctionDeclaration(node)) {
+        // Current function should be declared in the current scope.
+        const nameSymbol = node.name && checker.getSymbolAtLocation(node.name);
+        if (!nameSymbol) {
+            throw new Error("Cannot find function captured vars! Cannot retrieve function name");
+        }
+        const functionName = nameSymbol.name;
+        const funcVar: Function = find(currentScope, Variable.nameMatcher(functionName)) as Function;
+        if (!funcVar) {
+            throw new Error("Current function declaration is not detected in current scope");
+        }
+        const funcScope = getFunctionScope(funcVar, program, node);
+        node.body!.statements.map((statement) => visitStatementToFindAssignments(
+            statement,
+            program,
+            [...currentScope, ...outerScope],
+            funcScope,
+        ));
+    } else if (ts.isIfStatement(node)) {
+        visitStatement(node.thenStatement);
+        visitStatement(node.elseStatement);
+    } else if (ts.isClassDeclaration(node)) {
+        // TODO: Class visiting
+    } else if (ts.isWhileStatement(node)) {
+        visitStatement(node.statement);
+    } else if (ts.isReturnStatement(node)) {
+        // TODO: Expression visiting
+    } else if (ts.isExpressionStatement(node)) {
+        program.addAssignments(
+            node,
+            visitExpressionToFindAssignments(node.expression, outerScope, currentScope, program),
+        );
+    } else if (ts.isBlock(node)) {
+        node.statements.forEach(visitStatement);
+    } else {
+        throw new Error(`Unexpected node type ${node.kind} when marking assignments`);
+    }
 }

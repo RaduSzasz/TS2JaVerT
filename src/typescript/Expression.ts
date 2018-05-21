@@ -1,8 +1,9 @@
-import { compact, difference, find, map, uniq } from "lodash";
+import { compact, difference, find, flatMap, map, uniq } from "lodash";
 import * as ts from "typescript";
 import { Function } from "./functions/Function";
 import { createAndAnalyseFunction } from "./functions/FunctionCreator";
 import { Program } from "./Program";
+import { visitStatementToFindAssignments } from "./Statement";
 import { Variable } from "./Variable";
 
 export interface ExpressionAnalysis {
@@ -99,6 +100,74 @@ export function visitExpressionForCapturedVars(
                 .reduce(reduceExpressionAnalysis, emptyFunctionAnalysis);
     } else if (ts.isAsExpression(node)) {
         return visitExpressionPreservingTypeEnvs(node.expression);
+    }
+    throw new Error(`Node of kind ${node.kind} is not an expected Expression`);
+}
+
+export function visitExpressionToFindAssignments(
+    node: ts.Node | undefined,
+    outerScope: Variable[],
+    currentScope: Variable[],
+    program: Program): Variable[] {
+
+    const visitExpression = (n: ts.Node | undefined) =>
+        visitExpressionToFindAssignments(n, outerScope, currentScope, program);
+
+    if (!node ||
+        ts.isStringLiteral(node) ||
+        ts.isNumericLiteral(node) ||
+        ts.isIdentifier(node) ||
+        node.kind === ts.SyntaxKind.TrueKeyword || node.kind === ts.SyntaxKind.FalseKeyword ||
+        (ts.isToken(node) && node.kind === ts.SyntaxKind.ThisKeyword)) {
+
+        return [];
+    } else if (ts.isPropertyAccessExpression(node)) {
+        return visitExpression(node.expression);
+    } else if (ts.isElementAccessExpression(node)) {
+        return visitExpression(node.expression);
+    } else if (ts.isObjectLiteralExpression(node)) {
+        return uniq(flatMap(node.properties, (property) => {
+            if (ts.isPropertyAssignment(property)) {
+                return visitExpression(property);
+            } else {
+                throw new Error(`Object literal expression contains child of kind ${property.kind}`);
+            }
+        }));
+    } else if (ts.isPropertyAssignment(node)) {
+        return visitExpression(node.initializer);
+    } else if (ts.isCallExpression(node)) {
+        return uniq([
+            ...visitExpression(node.expression),
+            ...flatMap(node.arguments, visitExpression),
+        ]);
+    } else if (ts.isParenthesizedExpression(node)) {
+        return visitExpression(node.expression);
+    } else if (ts.isNewExpression(node)) {
+        if (node.arguments) {
+            return flatMap(node.arguments, visitExpression);
+        } else {
+            throw new Error("New expression had no args. When does this happen?");
+        }
+    } else if (ts.isAsExpression(node)) {
+        return visitExpression(node.expression);
+    } else if (ts.isBinaryExpression(node) &&
+        node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+        ts.isIdentifier(node.left)
+    ) {
+        const assignedVar = find(currentScope, Variable.nameMatcher(node.left.text))
+            || find(outerScope, Variable.nameMatcher(node.left.text));
+        if (!assignedVar) {
+            throw new Error(`Cannot find ${node.left.text} in scope`);
+        }
+        return uniq([assignedVar, ...visitExpression(node.right)]);
+    } else if (ts.isBinaryExpression(node)) {
+        return uniq([
+            ...visitExpression(node.left),
+            ...visitExpression(node.right),
+        ]);
+    } else if (ts.isFunctionExpression(node)) {
+        visitStatementToFindAssignments(node.body, program, outerScope, currentScope);
+        return [];
     }
     throw new Error(`Node of kind ${node.kind} is not an expected Expression`);
 }

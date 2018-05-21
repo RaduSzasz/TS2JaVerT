@@ -56,14 +56,9 @@ export function setCapturedVars(
     outerScope: Variable[],
     node: ts.FunctionDeclaration | ts.FunctionExpression | ts.MethodDeclaration | ts.ConstructorDeclaration,
 ) {
-    if (!node.body) {
-        throw new Error("Cannot check function captured variables. No body associated with the function");
-    }
-    const statements = node.body.statements;
-    const declaredWithinFunc = flatMap(statements,
-        (statement) => visitStatementToFindDeclaredVars(statement, program));
-
-    const withinFuncCurrScope = [...func.getParams(), ...declaredWithinFunc];
+    const withinFuncCurrScope = getFunctionScope(func, program, node);
+    // If !node.body getFunctionScope would have already failed
+    const statements = node.body!.statements;
     const capturedVars: Variable[] = uniq(
         flatMap(statements, (statement) => visitStatementToFindCapturedVars(
             statement,
@@ -72,6 +67,21 @@ export function setCapturedVars(
             withinFuncCurrScope,
         )));
     func.setCapturedVars(capturedVars);
+}
+
+export function getFunctionScope(
+    func: Function,
+    program: Program,
+    node: ts.FunctionDeclaration | ts.FunctionExpression | ts.MethodDeclaration | ts.ConstructorDeclaration,
+) {
+    if (!node.body) {
+        throw new Error("Cannot check function captured variables. No body associated with the function");
+    }
+    const statements = node.body.statements;
+    const declaredWithinFunc = flatMap(statements,
+        (statement) => visitStatementToFindDeclaredVars(statement, program));
+
+    return [...func.getParams(), ...declaredWithinFunc];
 }
 
 function createFunctionInstance(
