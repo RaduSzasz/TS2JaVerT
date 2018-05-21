@@ -20,8 +20,8 @@ export class Program {
     private classes: { [className: string]: Class } = {};
     private interfaces: { [interfaceName: string]: Interface } = {};
     private indexSignatures: { [name: string]: IndexSignaturePredicate } = {};
-    private functions: { [nodePos: number]: Function } = {};
-    private assignments: { [nodePos: number]: Variable } = {};
+    private functions: Map<ts.Node, Function> = new Map();
+    private assignments: Map<ts.Node, Variable> = new Map();
     private indexSigCnt = 0;
     private readonly gamma: Variable[];
 
@@ -48,11 +48,11 @@ export class Program {
     }
 
     public addFunction(node: ts.Node, func: Function): void {
-        this.functions[node.pos] = func;
+        this.functions.set(node, func);
     }
 
     public getFunctions(): Function[] {
-        return map(this.functions, (val: Function) => val);
+        return Array.from(this.functions.values());
     }
 
     public getClass(className: string): Class {
@@ -76,7 +76,7 @@ export class Program {
     }
 
     public addAssignment(node: ts.Node, variable: Variable): void {
-        this.assignments[node.pos] = variable;
+        this.assignments.set(node, variable);
     }
 
     public print(): void {
@@ -88,7 +88,6 @@ export class Program {
                 before: [
                     this.addPredicates,
                     this.addFunctionSpecTopLevel,
-                    this.addAssignmentAssertions,
                 ],
             }),
         );
@@ -119,86 +118,61 @@ export class Program {
             );
     }
 
-    private addAssignmentAssertionsVisitor: ts.Visitor = (node: ts.Node) => {
-        if (this.assignments[node.pos]) {
-            const varAssigned = this.assignments[node.pos];
-            if (ts.isVariableStatement(node)) {
-                return ts.addSyntheticTrailingComment(ts.createVariableStatement(node.modifiers,
-                    ts.createVariableDeclarationList(node.declarationList.declarations.map((declaration) => {
-                        const initializer = declaration.initializer;
-                        if (initializer && ts.isFunctionExpression(initializer)) {
-                            return ts.updateVariableDeclaration(declaration,
-                                declaration.name,
-                                declaration.type,
-                                ts.updateFunctionExpression(initializer,
-                                    initializer.modifiers,
-                                    initializer.asteriskToken,
-                                    initializer.name,
-                                    initializer.typeParameters,
-                                    initializer.parameters,
-                                    initializer.type,
-                                    ts.createBlock(ts.visitNodes(
-                                        initializer.body.statements,
-                                        this.addAssignmentAssertionsVisitor,
-                                    ))),
-                            );
-                        }
-                        return declaration;
-                    }))),
-                    ts.SyntaxKind.MultiLineCommentTrivia,
-                    varAssigned.toAssertion().toString(),
-                    true,
-                );
-            }
-        }
-        return node;
-    }
-
     private addFunctionSpecVisitor: ts.Visitor = (node: ts.Node) => {
-        if (this.functions[node.pos]) {
-            const funcVar = this.functions[node.pos];
-            if (ts.isFunctionDeclaration(node)) {
-                return ts.addSyntheticLeadingComment(ts.updateFunctionDeclaration(node,
-                        node.decorators,
-                        node.modifiers,
-                        node.asteriskToken,
-                        node.name,
-                        node.typeParameters,
-                        node.parameters,
-                        node.type,
-                        // TODO: Think of a better way of solving this rather than using !
-                        ts.createBlock(ts.visitNodes(node.body!.statements, this.addFunctionSpecVisitor)),
-                    ),
+        const funcVar = this.functions.get(node);
+        const assignedVar = this.functions.get(node);
+        if (funcVar && ts.isFunctionDeclaration(node)) {
+            return ts.addSyntheticLeadingComment(ts.updateFunctionDeclaration(node,
+                    node.decorators,
+                    node.modifiers,
+                    node.asteriskToken,
+                    node.name,
+                    node.typeParameters,
+                    node.parameters,
+                    node.type,
+                    // TODO: Think of a better way of solving this rather than using !
+                    ts.createBlock(ts.visitNodes(node.body!.statements, this.addFunctionSpecVisitor)),
+                ),
+                ts.SyntaxKind.MultiLineCommentTrivia,
+                printFunctionSpec(funcVar.generateAssertion()),
+                true,
+            );
+        } else if (ts.isVariableStatement(node)) {
+            const annotatedNode = ts.createVariableStatement(node.modifiers,
+                ts.createVariableDeclarationList(node.declarationList.declarations.map((declaration) => {
+                    const initializer = declaration.initializer;
+                    if (initializer && ts.isFunctionExpression(initializer)) {
+                        return ts.updateVariableDeclaration(declaration,
+                            declaration.name,
+                            declaration.type,
+                            ts.updateFunctionExpression(initializer,
+                                initializer.modifiers,
+                                initializer.asteriskToken,
+                                initializer.name,
+                                initializer.typeParameters,
+                                initializer.parameters,
+                                initializer.type,
+                                ts.createBlock(
+                                    ts.visitNodes(initializer.body.statements, this.addFunctionSpecVisitor))),
+                        );
+                    }
+                    return declaration;
+                })));
+
+            const functionCommentedNode = funcVar
+                ? ts.addSyntheticLeadingComment(annotatedNode,
                     ts.SyntaxKind.MultiLineCommentTrivia,
                     printFunctionSpec(funcVar.generateAssertion()),
-                    true,
-                );
-            } else if (ts.isVariableStatement(node)) {
-                return ts.addSyntheticLeadingComment(ts.createVariableStatement(node.modifiers,
-                    ts.createVariableDeclarationList(node.declarationList.declarations.map((declaration) => {
-                        const initializer = declaration.initializer;
-                        if (initializer && ts.isFunctionExpression(initializer)) {
-                            return ts.updateVariableDeclaration(declaration,
-                                declaration.name,
-                                declaration.type,
-                                ts.updateFunctionExpression(initializer,
-                                    initializer.modifiers,
-                                    initializer.asteriskToken,
-                                    initializer.name,
-                                    initializer.typeParameters,
-                                    initializer.parameters,
-                                    initializer.type,
-                                    ts.createBlock(
-                                        ts.visitNodes(initializer.body.statements, this.addFunctionSpecVisitor))),
-                            );
-                        }
-                        return declaration;
-                    }))),
+                    true)
+                : annotatedNode;
+
+            return assignedVar
+                ? ts.addSyntheticTrailingComment(functionCommentedNode,
                     ts.SyntaxKind.MultiLineCommentTrivia,
-                    printFunctionSpec(funcVar.generateAssertion()),
-                    true,
-                );
-            }
+                    assignedVar.toAssertion().toString(),
+                    true)
+                : functionCommentedNode;
+
         } else if (ts.isClassDeclaration(node)) {
             return ts.updateClassDeclaration(
                 node,
@@ -214,8 +188,8 @@ export class Program {
     }
 
     private addClassMemberSpecVisitor: ts.Visitor = (member: ts.Node) => {
+        const funcVar = this.functions.get(member);
         if (ts.isMethodDeclaration(member)) {
-            const funcVar = this.functions[member.pos];
             if (!funcVar) {
                 throw new Error("Class method not associated with function spec");
             }
@@ -240,8 +214,7 @@ export class Program {
                 printFunctionSpec(funcVar.generateAssertion()),
                 true,
             );
-        } else if (ts.isPropertyDeclaration(member) && this.functions[member.pos]) {
-            const funcVar = this.functions[member.pos];
+        } else if (ts.isPropertyDeclaration(member) && funcVar) {
             return ts.addSyntheticLeadingComment(ts.updateProperty(
                     member,
                     member.decorators,
@@ -261,9 +234,6 @@ export class Program {
 
     private addFunctionSpecTopLevel: ts.TransformerFactory<ts.SourceFile> = (context) =>
         (src) => ts.visitEachChild(src, this.addFunctionSpecVisitor, context)
-
-    private addAssignmentAssertions: ts.TransformerFactory<ts.SourceFile> = (context) =>
-        (src) => ts.visitEachChild(src, this.addAssignmentAssertionsVisitor, context)
 
     private addPredicates = (): ts.Transformer<ts.SourceFile> => {
         return (src: ts.SourceFile) => {
