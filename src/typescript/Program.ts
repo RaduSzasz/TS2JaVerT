@@ -261,11 +261,22 @@ export class Program {
                     member.name,
                     member.questionToken,
                     member.type,
-                    member.initializer,
+                    ts.visitNode(member.initializer, this.addFunctionSpecVisitor),
                 ),
                 ts.SyntaxKind.MultiLineCommentTrivia,
                 printFunctionSpec(funcVar.generateAssertion()),
                 true,
+            );
+        } else if (ts.isConstructorDeclaration(member)) {
+            if (!member.body) {
+                throw new Error("Constructor declaration body is falsey when adding specs");
+            }
+            return ts.updateConstructor(member,
+                member.decorators,
+                member.modifiers,
+                member.parameters,
+                ts.updateBlock(member.body,
+                    ts.visitNodes(member.body.statements, this.addFunctionSpecVisitor)),
             );
         }
         return member;

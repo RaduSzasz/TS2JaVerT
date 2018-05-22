@@ -240,13 +240,13 @@ export function visitStatementToFindAssignments(
                 ));
             },
             methodDeclarationVisitor: (declaration, _1, classOuterScope) => {
-                const constrVar = program.getFunction(declaration);
-                if (!constrVar) {
+                const methodVar = program.getFunction(declaration);
+                if (!methodVar) {
                     throw new Error("No function associated with constructor declaration");
                 } else if (!declaration.body) {
                     throw new Error("Constructor declaration has no body");
                 }
-                const constrScope = getFunctionScope(constrVar, program, declaration);
+                const constrScope = getFunctionScope(methodVar, program, declaration);
                 declaration.body.statements.map((statement) => visitStatementToFindAssignments(
                     statement,
                     program,
@@ -254,8 +254,25 @@ export function visitStatementToFindAssignments(
                     constrScope,
                 ));
             },
-            propertyVisitor: () => {
+            propertyVisitor: (declaration, _1, classOuterScope) => {
                 /* Intentionally left empty */
+                const funcVar = program.getFunction(declaration);
+                if (!funcVar) {
+                    return;
+                }
+
+                if (!declaration.initializer || !ts.isFunctionExpression(declaration.initializer)) {
+                    throw new Error("Property has associated function variable but no initializer");
+                }
+
+                const constrScope = getFunctionScope(funcVar, program, declaration.initializer);
+                declaration.initializer.body.statements
+                    .map((statement) => visitStatementToFindAssignments(
+                        statement,
+                        program,
+                        classOuterScope,
+                        constrScope,
+                    ));
             },
         });
     } else if (ts.isWhileStatement(node)) {
