@@ -1,4 +1,3 @@
-import { CustomPredicate } from "../src/assertions/CustomPredicate";
 import { ScopeAssertion } from "../src/assertions/ScopeAssertion";
 import { SeparatingConjunctionList } from "../src/assertions/SeparatingConjunctionList";
 import { TypesPredicate } from "../src/assertions/TypesPredicate";
