@@ -142,7 +142,22 @@ export function visitStatementToFindAssignments(
         node.declarations.forEach(visitStatement);
     } else if (ts.isVariableDeclaration(node)) {
         if (node.initializer) {
-            /// TODO: Expression visiting
+            if (node.parent && ts.isVariableDeclarationList(node.parent) &&
+                node.parent.parent && ts.isVariableStatement(node.parent.parent)) {
+
+                program.addAssignments(
+                    node.parent.parent,
+                    visitExpressionToFindAssignments(
+                        node.initializer,
+                        outerScope,
+                        currentScope,
+                        program,
+                        program.getFunction(node.parent.parent),
+                    ),
+                );
+            } else {
+                throw new Error("Variable declaration was not child of variable statement. Something went wrong");
+            }
         }
     } else if (ts.isFunctionDeclaration(node)) {
         // Current function should be declared in the current scope.
@@ -170,11 +185,20 @@ export function visitStatementToFindAssignments(
     } else if (ts.isWhileStatement(node)) {
         visitStatement(node.statement);
     } else if (ts.isReturnStatement(node)) {
-        // TODO: Expression visiting
-    } else if (ts.isExpressionStatement(node)) {
         program.addAssignments(
             node,
             visitExpressionToFindAssignments(node.expression, outerScope, currentScope, program),
+        );
+    } else if (ts.isExpressionStatement(node)) {
+        program.addAssignments(
+            node,
+            visitExpressionToFindAssignments(
+                node.expression,
+                outerScope,
+                currentScope,
+                program,
+                program.getFunction(node),
+            ),
         );
     } else if (ts.isBlock(node)) {
         node.statements.forEach(visitStatement);

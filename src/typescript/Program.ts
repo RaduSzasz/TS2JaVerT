@@ -44,8 +44,8 @@ export class Program {
                     .map((statement) => visitStatementToFindDeclaredVars(statement, this)),
         );
 
-        this.annotateAssignments();
         this.determineCapturedVars();
+        this.annotateAssignments();
     }
 
     public getTypeChecker(): ts.TypeChecker {
@@ -78,6 +78,10 @@ export class Program {
         return new SeparatingConjunctionList([
             ...map(this.classes, (cls) => cls.getProtoAssertion()),
         ]);
+    }
+
+    public getFunction(node: ts.Node): Function | undefined {
+        return this.functions.get(node);
     }
 
     public addAssignments(node: ts.Node, variables: Variable[]): void {
@@ -191,8 +195,76 @@ export class Program {
                     true)
                 : functionCommentedNode;
 
+        } else if (ts.isFunctionExpression(node)) {
+            const annotatedNode = ts.updateFunctionExpression(node,
+                        node.modifiers,
+                        node.asteriskToken,
+                        node.name,
+                        node.typeParameters,
+                        node.parameters,
+                        node.type,
+                        ts.createBlock(
+                            ts.visitNodes(node.body.statements, this.addFunctionSpecVisitor)));
+
+            const functionCommentedNode = funcVar
+                ? ts.addSyntheticLeadingComment(annotatedNode,
+                    ts.SyntaxKind.MultiLineCommentTrivia,
+                    printFunctionSpec(funcVar.generateAssertion()),
+                    true)
+                : annotatedNode;
+
+            return assignedVars
+                ? ts.addSyntheticTrailingComment(functionCommentedNode,
+                    ts.SyntaxKind.MultiLineCommentTrivia,
+                    new SeparatingConjunctionList(
+                        assignedVars.map((assignedVar) => assignedVar.toAssertion()),
+                    ).toString(),
+                    true)
+                : functionCommentedNode;
+        } else if (ts.isBinaryExpression(node) &&
+            node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+            ts.isIdentifier(node.left)) {
+
+            const annotatedNode = ts.updateBinary(node,
+                node.left,
+                ts.visitNode(node.right, this.addFunctionSpecVisitor),
+                node.operatorToken);
+
+            const functionCommentedNode = funcVar
+                ? ts.addSyntheticLeadingComment(annotatedNode,
+                    ts.SyntaxKind.MultiLineCommentTrivia,
+                    printFunctionSpec(funcVar.generateAssertion()),
+                    true)
+                : annotatedNode;
+
+            return assignedVars
+                ? ts.addSyntheticTrailingComment(functionCommentedNode,
+                    ts.SyntaxKind.MultiLineCommentTrivia,
+                    new SeparatingConjunctionList(
+                        assignedVars.map((assignedVar) => assignedVar.toAssertion()),
+                    ).toString(),
+                    true)
+                : functionCommentedNode;
         } else if (ts.isExpressionStatement(node)) {
             const annotatedNode = ts.updateStatement(node, ts.visitNode(node.expression, this.addFunctionSpecVisitor));
+
+            const functionCommentedNode = funcVar
+                ? ts.addSyntheticLeadingComment(annotatedNode,
+                    ts.SyntaxKind.MultiLineCommentTrivia,
+                    printFunctionSpec(funcVar.generateAssertion()),
+                    true)
+                : annotatedNode;
+
+            return assignedVars
+                ? ts.addSyntheticTrailingComment(functionCommentedNode,
+                    ts.SyntaxKind.MultiLineCommentTrivia,
+                    new SeparatingConjunctionList(
+                        assignedVars.map((assignedVar) => assignedVar.toAssertion()),
+                    ).toString(),
+                    true)
+                : functionCommentedNode;
+        } else if (ts.isReturnStatement(node)) {
+            const annotatedNode = ts.updateReturn(node, ts.visitNode(node.expression, this.addFunctionSpecVisitor));
 
             const functionCommentedNode = funcVar
                 ? ts.addSyntheticLeadingComment(annotatedNode,

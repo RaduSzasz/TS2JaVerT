@@ -1,7 +1,7 @@
 import { compact, difference, find, flatMap, map, uniq } from "lodash";
 import * as ts from "typescript";
 import { Function } from "./functions/Function";
-import { createAndAnalyseFunction } from "./functions/FunctionCreator";
+import { createAndAnalyseFunction, getFunctionScope } from "./functions/FunctionCreator";
 import { Program } from "./Program";
 import { visitStatementToFindAssignments } from "./Statement";
 import { Variable } from "./Variable";
@@ -108,10 +108,18 @@ export function visitExpressionToFindAssignments(
     node: ts.Node | undefined,
     outerScope: Variable[],
     currentScope: Variable[],
-    program: Program): Variable[] {
+    program: Program,
+    func?: Function): Variable[] {
+
+    if (node && func &&
+        !ts.isFunctionExpression(node) &&
+        !(ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken)) {
+
+        throw new Error(`Func argument is provided, node is ${node.kind} instead of FunctionExpression`);
+    }
 
     const visitExpression = (n: ts.Node | undefined) =>
-        visitExpressionToFindAssignments(n, outerScope, currentScope, program);
+        visitExpressionToFindAssignments(n, outerScope, currentScope, program, func);
 
     if (!node ||
         ts.isStringLiteral(node) ||
@@ -166,7 +174,16 @@ export function visitExpressionToFindAssignments(
             ...visitExpression(node.right),
         ]);
     } else if (ts.isFunctionExpression(node)) {
-        visitStatementToFindAssignments(node.body, program, outerScope, currentScope);
+        if (!func) {
+            throw new Error("Function expression node encountered, but no func argument provided");
+        }
+        const funcScope = getFunctionScope(func, program, node);
+        visitStatementToFindAssignments(
+            node.body,
+            program,
+            [...currentScope, ...outerScope],
+            funcScope,
+        );
         return [];
     }
     throw new Error(`Node of kind ${node.kind} is not an expected Expression`);
