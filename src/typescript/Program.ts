@@ -15,7 +15,7 @@ import {
 } from "./Statement";
 import { createCustomTransformers } from "./transformers/FileContext";
 import { Type } from "./Types";
-import { Variable } from "./Variable";
+import { AssignedVariable, Variable } from "./Variable";
 
 export class Program {
     private program: ts.Program;
@@ -25,7 +25,7 @@ export class Program {
     private interfaces: { [interfaceName: string]: Interface } = {};
     private indexSignatures: { [name: string]: IndexSignaturePredicate } = {};
     private functions: Map<ts.Node, Function> = new Map();
-    private assignments: Map<ts.Node, Variable[]> = new Map();
+    private assignments: Map<ts.Node, AssignedVariable[]> = new Map();
     private indexSigCnt = 0;
     private readonly gamma: Variable[];
 
@@ -84,7 +84,7 @@ export class Program {
         return this.functions.get(node);
     }
 
-    public addAssignments(node: ts.Node, variables: Variable[]): void {
+    public addAssignments(node: ts.Node, variables: AssignedVariable[]): void {
         if (variables.length) {
             const nodeAssignments = this.assignments.get(node) || [];
             this.assignments.set(node, nodeAssignments.concat(variables));
@@ -219,7 +219,8 @@ export class Program {
             ? ts.addSyntheticTrailingComment(functionCommentedNode,
                 ts.SyntaxKind.MultiLineCommentTrivia,
                 new SeparatingConjunctionList(
-                    assignedVars.map((assignedVar) => assignedVar.toAssertion()),
+                    assignedVars.map(({ assignedVar, currentScope }) =>
+                        currentScope ? assignedVar.toAssertion() : assignedVar.toAssertionExtractingScope()),
                 ).toString(),
                 true)
             : functionCommentedNode;

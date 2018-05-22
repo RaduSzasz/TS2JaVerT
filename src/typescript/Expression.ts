@@ -1,10 +1,10 @@
-import { compact, difference, find, flatMap, map, uniq } from "lodash";
+import { compact, difference, find, flatMap, isEqual, map, uniq, uniqWith } from "lodash";
 import * as ts from "typescript";
 import { Function } from "./functions/Function";
 import { createAndAnalyseFunction, getFunctionScope } from "./functions/FunctionCreator";
 import { Program } from "./Program";
 import { visitStatementToFindAssignments } from "./Statement";
-import { Variable } from "./Variable";
+import { AssignedVariable, Variable } from "./Variable";
 
 export interface ExpressionAnalysis {
     capturedVars: Variable[];
@@ -109,13 +109,14 @@ export function visitExpressionToFindAssignments(
     outerScope: Variable[],
     currentScope: Variable[],
     program: Program,
-    func?: Function): Variable[] {
+    func?: Function): AssignedVariable[] {
 
     if (node && func &&
         !ts.isFunctionExpression(node) &&
         !(ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken)) {
 
-        throw new Error(`Func argument is provided, node is ${node.kind} instead of FunctionExpression`);
+        throw new Error(`Func argument is provided, node is ${node.kind} instead of function
+        expression or assignment`);
     }
 
     const visitExpression = (n: ts.Node | undefined) =>
@@ -134,25 +135,25 @@ export function visitExpressionToFindAssignments(
     } else if (ts.isElementAccessExpression(node)) {
         return visitExpression(node.expression);
     } else if (ts.isObjectLiteralExpression(node)) {
-        return uniq(flatMap(node.properties, (property) => {
+        return uniqWith(flatMap(node.properties, (property) => {
             if (ts.isPropertyAssignment(property)) {
                 return visitExpression(property);
             } else {
                 throw new Error(`Object literal expression contains child of kind ${property.kind}`);
             }
-        }));
+        }), isEqual);
     } else if (ts.isPropertyAssignment(node)) {
         return visitExpression(node.initializer);
     } else if (ts.isCallExpression(node)) {
-        return uniq([
+        return uniqWith(compact([
             ...visitExpression(node.expression),
             ...flatMap(node.arguments, visitExpression),
-        ]);
+        ]), isEqual);
     } else if (ts.isParenthesizedExpression(node)) {
         return visitExpression(node.expression);
     } else if (ts.isNewExpression(node)) {
         if (node.arguments) {
-            return flatMap(node.arguments, visitExpression);
+            return uniqWith(flatMap(node.arguments, visitExpression), isEqual);
         } else {
             throw new Error("New expression had no args. When does this happen?");
         }
@@ -162,17 +163,18 @@ export function visitExpressionToFindAssignments(
         node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
         ts.isIdentifier(node.left)
     ) {
-        const assignedVar = find(currentScope, Variable.nameMatcher(node.left.text))
-            || find(outerScope, Variable.nameMatcher(node.left.text));
+
+        const assignedVar = getAssignedVariable(node.left.text, outerScope, currentScope);
         if (!assignedVar) {
             throw new Error(`Cannot find ${node.left.text} in scope`);
         }
-        return uniq([assignedVar, ...visitExpression(node.right)]);
+        const rightResult = visitExpression(node.right);
+        return uniqWith(compact([assignedVar, ...rightResult]), isEqual);
     } else if (ts.isBinaryExpression(node)) {
-        return uniq([
+        return uniqWith(compact([
             ...visitExpression(node.left),
             ...visitExpression(node.right),
-        ]);
+        ]), isEqual);
     } else if (ts.isFunctionExpression(node)) {
         if (!func) {
             throw new Error("Function expression node encountered, but no func argument provided");
@@ -187,4 +189,23 @@ export function visitExpressionToFindAssignments(
         return [];
     }
     throw new Error(`Node of kind ${node.kind} is not an expected Expression`);
+}
+
+function getAssignedVariable(
+    varName: string,
+    outerScope: Variable[],
+    currentScope: Variable[]): AssignedVariable | undefined {
+
+    const currentScopeVar = find(currentScope, Variable.nameMatcher(varName));
+    if (currentScopeVar) {
+        return {
+            assignedVar: currentScopeVar,
+            currentScope: true,
+        };
+    }
+    const outerScopeVar = find(outerScope, Variable.nameMatcher(varName));
+    return outerScopeVar && {
+        assignedVar: outerScopeVar,
+        currentScope: false,
+    };
 }

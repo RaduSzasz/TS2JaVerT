@@ -33,7 +33,10 @@ export function visitStatementToFindDeclaredVars(
             if (node.parent && ts.isVariableDeclarationList(node.parent) &&
                 node.parent.parent && ts.isVariableStatement(node.parent.parent)) {
 
-                program.addAssignments(node.parent.parent, [declaredVar]);
+                program.addAssignments(node.parent.parent, [{
+                    assignedVar: declaredVar,
+                    currentScope: true,
+                }]);
             } else {
                 throw new Error("Variable declaration was not child of variable statement. Something went wrong");
             }

@@ -21,6 +21,11 @@ import {
     typeFromTSType,
 } from "./Types";
 
+export interface AssignedVariable {
+    assignedVar: Variable;
+    currentScope: boolean;
+}
+
 export class Variable {
     public static fromDeclaration(
         declaration: ts.ParameterDeclaration | ts.PropertyDeclaration | ts.VariableDeclaration | ts.PropertySignature,
