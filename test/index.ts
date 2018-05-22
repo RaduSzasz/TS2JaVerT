@@ -30,7 +30,7 @@ describe("A suite for checking if we find identifiers in expressions", () => {
         expect(program).toBeTruthy();
         const functions = program.getFunctions();
         expect(functions.length).toBe(2);
-        const [outerFunc, innerFunc] = program.getFunctions();
+        const [innerFunc, outerFunc] = program.getFunctions();
         expect(outerFunc.getName()).toEqual("f");
         expect(innerFunc.getName()).toEqual("g");
         const outerFuncSpec = outerFunc.generateAssertion();
