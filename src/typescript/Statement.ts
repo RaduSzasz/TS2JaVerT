@@ -107,7 +107,44 @@ export function visitStatementToFindCapturedVars(
         ]));
     } else if (ts.isClassDeclaration(node)) {
         const classScope = [...currentScope, ...outerScope];
-        return Class.visitClass(node, classScope, program);
+
+        Class.visitClass(node, classScope, program, {
+            constructorDeclarationVisitor: (declaration, classVar, classOuterScope) => createAndAnalyseFunction(
+                    declaration,
+                    program,
+                    classOuterScope,
+                    (constr) => {
+                        program.addFunction(declaration, constr);
+                        classVar.setConstructor(constr);
+                    },
+                    classVar,
+                ).getCapturedVars(),
+            methodDeclarationVisitor: (declaration, classVar, classOuterScope) => createAndAnalyseFunction(
+                    declaration,
+                    program,
+                    classOuterScope,
+                    (method) => {
+                        program.addFunction(declaration, method);
+                        classVar.addMethod(method);
+                    },
+                    classVar,
+                ).getCapturedVars(),
+            propertyVisitor: (declaration, classVar, classOuterScope) => {
+                const declaredField = Variable.fromDeclaration(declaration, program);
+                classVar.addField(declaredField);
+                if (declaration.initializer) {
+                    const expressionAnalysis =
+                        visitExpressionForCapturedVars(declaration.initializer, classOuterScope, [], program);
+                    if (expressionAnalysis.funcDef) {
+                        program.addFunction(declaration, expressionAnalysis.funcDef);
+                    }
+                    return expressionAnalysis.capturedVars;
+                }
+                return [];
+            },
+        });
+
+        return [];
     } else if (ts.isWhileStatement(node)) {
         return visitStatement(node.statement);
     } else if (ts.isReturnStatement(node)) {
@@ -184,7 +221,43 @@ export function visitStatementToFindAssignments(
         visitStatement(node.thenStatement);
         visitStatement(node.elseStatement);
     } else if (ts.isClassDeclaration(node)) {
-        // TODO: Class visiting
+        const classScope = [...currentScope, ...outerScope];
+
+        Class.visitClass(node, classScope, program, {
+            constructorDeclarationVisitor: (declaration, _1, classOuterScope) => {
+                const constrVar = program.getFunction(declaration);
+                if (!constrVar) {
+                    throw new Error("No function associated with constructor declaration");
+                } else if (!declaration.body) {
+                    throw new Error("Constructor declaration has no body");
+                }
+                const constrScope = getFunctionScope(constrVar, program, declaration);
+                declaration.body.statements.map((statement) => visitStatementToFindAssignments(
+                    statement,
+                    program,
+                    classOuterScope,
+                    constrScope,
+                ));
+            },
+            methodDeclarationVisitor: (declaration, _1, classOuterScope) => {
+                const constrVar = program.getFunction(declaration);
+                if (!constrVar) {
+                    throw new Error("No function associated with constructor declaration");
+                } else if (!declaration.body) {
+                    throw new Error("Constructor declaration has no body");
+                }
+                const constrScope = getFunctionScope(constrVar, program, declaration);
+                declaration.body.statements.map((statement) => visitStatementToFindAssignments(
+                    statement,
+                    program,
+                    classOuterScope,
+                    constrScope,
+                ));
+            },
+            propertyVisitor: () => {
+                /* Intentionally left empty */
+            },
+        });
     } else if (ts.isWhileStatement(node)) {
         visitStatement(node.statement);
     } else if (ts.isReturnStatement(node)) {

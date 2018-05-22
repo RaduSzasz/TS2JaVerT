@@ -8,18 +8,26 @@ import { printFunctionSpec } from "../assertions/FunctionSpec";
 import { JSObject } from "../assertions/JSObject";
 import { NoneAssertion } from "../assertions/NoneAssertion";
 import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";
-import { visitExpressionForCapturedVars } from "./Expression";
 import { Function } from "./functions/Function";
-import { createAndAnalyseFunction } from "./functions/FunctionCreator";
 import { Program } from "./Program";
 import { Variable } from "./Variable";
 
+export interface ClassVisitor<T> {
+    constructorDeclarationVisitor: (
+        declaration: ts.ConstructorDeclaration,
+        classVar: Class,
+        outerScope: Variable[]) => T;
+    methodDeclarationVisitor: (declaration: ts.MethodDeclaration, classVar: Class, outerScope: Variable[]) => T;
+    propertyVisitor: (declaration: ts.PropertyDeclaration, classVar: Class, classOuterScope: Variable[]) => T;
+}
+
 export class Class {
-    public static visitClass(
+    public static visitClass<T>(
         node: ts.ClassDeclaration,
         classOuterScope: Variable[],
         program: Program,
-    ): Variable[] {
+        visitor: ClassVisitor<T>,
+    ): T[] {
         const checker = program.getTypeChecker();
         if (!node.name || !checker.getSymbolAtLocation(node.name)) {
             throw new Error("Failure while trying to visit class! Cannot retrieve class symbol");
@@ -27,43 +35,16 @@ export class Class {
         const className = checker.getSymbolAtLocation(node.name)!.name;
 
         const classVar = program.getClass(className);
-        node.members.map((member) => {
+        return node.members.map((member) => {
             if (ts.isConstructorDeclaration(member)) {
-                return createAndAnalyseFunction(
-                    member,
-                    program,
-                    classOuterScope,
-                    (constr) => { classVar.setConstructor(constr); },
-                    classVar,
-                ).getCapturedVars();
+                return visitor.constructorDeclarationVisitor(member, classVar, classOuterScope);
             } else if (ts.isMethodDeclaration(member)) {
-                return createAndAnalyseFunction(
-                    member,
-                    program,
-                    classOuterScope,
-                    (method) => {
-                        program.addFunction(member, method);
-                        classVar.addMethod(method);
-                    },
-                    classVar,
-                ).getCapturedVars();
+                return visitor.methodDeclarationVisitor(member, classVar, classOuterScope);
             } else if (ts.isPropertyDeclaration(member)) {
-                const declaredField = Variable.fromDeclaration(member, program);
-                classVar.addField(declaredField);
-                if (member.initializer) {
-                    const expressionAnalysis =
-                        visitExpressionForCapturedVars(member.initializer, classOuterScope, [], program);
-                    if (expressionAnalysis.funcDef) {
-                        program.addFunction(member, expressionAnalysis.funcDef);
-                    }
-                    return expressionAnalysis.capturedVars;
-                }
-                return [];
+                return visitor.propertyVisitor(member, classVar, classOuterScope);
             }
             throw new Error("Unexpected member in class");
         });
-
-        return [];
     }
 
     public static resolveParents(classMap: { [className: string]: Class }) {
@@ -212,7 +193,7 @@ export class Class {
         return printFunctionSpec(this.constr.generateAssertion());
     }
 
-    private setConstructor(constr: Function): void {
+    public setConstructor(constr: Function): void {
         if (this.constr) {
             throw new Error("Can not set constructor. Class has already set it once.");
         }
