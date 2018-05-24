@@ -220,10 +220,10 @@ export class Program {
         return assignedVars
             ? ts.addSyntheticTrailingComment(functionCommentedNode,
                 ts.SyntaxKind.MultiLineCommentTrivia,
-                new SeparatingConjunctionList(
+                `@tactic assert(${new SeparatingConjunctionList(
                     assignedVars.map(({ assignedVar, currentScope }) =>
                         currentScope ? assignedVar.toAssertion() : assignedVar.toAssertionExtractingScope()),
-                ).toString(),
+                ).toString()})`,
                 true)
             : functionCommentedNode;
     }
