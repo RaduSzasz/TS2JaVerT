@@ -12,6 +12,7 @@ export enum AssertionKind {
     HardcodedString,
     JSObject,
     None,
+    ObjectPrototype,
     Scope,
     SeparatingConjunction,
     Types,

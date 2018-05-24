@@ -12,6 +12,6 @@ export class JSObject extends AssertionObject {
     }
 
     public toString() {
-        return `JSObject(${this.obj}, ${this.proto})`;
+        return `JSObjWithProto(${this.obj}, ${this.proto})`;
     }
 }

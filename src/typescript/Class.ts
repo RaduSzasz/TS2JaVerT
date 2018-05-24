@@ -118,7 +118,7 @@ export class Class {
         const currProto = "proto";
         const parentProto = "parentProto";
         const fPlus = this.determineFPlus();
-        const predDef = `${this.getProtoPredicateName()}(${currProto}, ${parentProto})`;
+        const predDef = `${this.getProtoPredicateName()}(+${currProto}, ${parentProto})`;
         const predicate = new SeparatingConjunctionList([
             new JSObject(currProto, parentProto),
             ...fPlus.map((field) => new NoneAssertion(currProto, field)),
@@ -128,7 +128,7 @@ export class Class {
             ])),
         ]);
         return `
-        ${predDef}:
+        @pred ${predDef}:
             ${predicate.toString()}
 `;
     }
@@ -146,7 +146,7 @@ export class Class {
             ])),
         ]).toDisjunctiveNormalForm();
         return `
-        ${this.getInstancePredicateName()}(${o}, ${proto}):
+        @pred ${this.getInstancePredicateName()}(+${o}, ${proto}):
             ${predAssertion.disjuncts.map((def) => def.toString()).join(",\n")}
 `;
     }
@@ -177,7 +177,7 @@ export class Class {
             `${protoLogicalVariableName}, ${
                 this.inheritingFrom
                     ? this.inheritingFrom.getProtoLogicalVariableName()
-                    : "Object.prototype"}`,
+                    : "$lobj_proto"}`,
         );
     }
 

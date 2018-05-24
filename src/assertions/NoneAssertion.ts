@@ -7,6 +7,6 @@ export class NoneAssertion extends AssertionObject {
     }
 
     public toString(): string {
-        return `(${this.o}, "${this.field}") -> None`;
+        return `((${this.o}, "${this.field}") -> none)`;
     }
 }

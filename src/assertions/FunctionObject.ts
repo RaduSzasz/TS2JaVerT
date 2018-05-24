@@ -7,6 +7,6 @@ export class FunctionObject extends AssertionObject {
     }
 
     public toString() {
-        return `FunctionObject(${this.obj}, ${this.id || "_"}, _)`;
+        return `JSFunctionObject(${this.obj}, ${this.id || "_"}, _, _, _)`;
     }
 }
