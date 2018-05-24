@@ -49,7 +49,7 @@ export class Constructor extends Function {
             throw new Error("Constructors must have associated class variable. Something went wrong!");
         }
         this.classVar = undefined;
-        const regularFunctionPre = super.generatePreCondition();
+        const regularFunctionPre = super.generatePostCondition();
         this.classVar = classVar;
 
         return new SeparatingConjunctionList([

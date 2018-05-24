@@ -43,6 +43,10 @@ export function isDisjunction(assertion: Assertion): assertion is Disjunction {
     return assertion.kind === AssertionKind.Disjunction;
 }
 
+export function isEmp(assertion: Assertion): assertion is Emp {
+    return assertion.kind === AssertionKind.Emp;
+}
+
 export function typeToAssertion(name: string, type: Type): Assertion {
     if (isPrimitiveType(type)) {
         return new TypesPredicate(name, type.typeFlag);

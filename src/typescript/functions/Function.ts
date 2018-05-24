@@ -59,7 +59,7 @@ export class Function extends Variable {
 
     public generateAssertion(): FunctionSpec {
         const pre = this.generatePreCondition();
-        const post = this.generatePostCondition(pre);
+        const post = this.generatePostCondition();
 
         return {
             id: this.id,
@@ -97,8 +97,24 @@ export class Function extends Variable {
         ]));
     }
 
-    private generatePostCondition(pre: Assertion): SeparatingConjunctionList {
+    protected generatePostCondition(): SeparatingConjunctionList {
+        if (!this.capturedVars) {
+            throw new Error("Can not generate pre-condition before determining captured vars");
+        }
+        const protoAssertion = this.program.getPrototypeAssertion();
+        const paramAssertions: Assertion[]
+            = this.params
+                .map((param) => Variable.logicalVariableFromVariable(param).toAssertion());
+        const capturedVariableAssertions: Assertion[]
+            = this.capturedVars
+                .map((capturedVar) => capturedVar.toAssertionExtractingScope());
         const ret = Variable.newReturnVariable(this.returnType);
-        return new SeparatingConjunctionList([pre, ret.toAssertion()]);
+        return new SeparatingConjunctionList(compact([
+            protoAssertion,
+            (this.classVar ? this.classVar.getAssertion("this") : undefined),
+            ...paramAssertions,
+            ...capturedVariableAssertions,
+            ret.toAssertion(),
+        ]));
     }
 }

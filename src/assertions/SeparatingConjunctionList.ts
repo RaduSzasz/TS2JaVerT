@@ -2,7 +2,7 @@ import { flatMap } from "lodash";
 import {
     Assertion,
     AssertionKind,
-    isDisjunction,
+    isDisjunction, isEmp,
     isSeparatingConjunction,
 } from "./Assertion";
 import { AssertionObject } from "./AssertionObject";
@@ -16,7 +16,7 @@ export class SeparatingConjunctionList extends AssertionObject {
         super(AssertionKind.SeparatingConjunction);
 
         this.conjuncts = flatMap(
-            conjuncts,
+            conjuncts.filter((conj) => !isEmp(conj)),
             (conj) => isSeparatingConjunction(conj) ? conj.conjuncts : [conj]);
     }
 
