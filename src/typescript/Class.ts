@@ -1,4 +1,4 @@
-import { chain, find, isEqual, map } from "lodash";
+import { chain, find, flatMap, isEqual, map } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../assertions/Assertion";
 import { CustomPredicate } from "../assertions/CustomPredicate";
@@ -59,6 +59,10 @@ export class Class {
         while (map(classMap, (classVar) => classVar.updateAncestorsAndDescendants()).some((val) => val)) {
             // Intentionally blank
         }
+
+        map(classMap, (classVar) =>
+            classVar.properties = flatMap(classVar.ancestors, (ancestor) => ancestor.properties),
+        );
     }
 
     public readonly name: string;

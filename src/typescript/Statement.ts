@@ -65,8 +65,7 @@ export function visitStatementToFindCapturedVars(
     const checker = program.getTypeChecker();
     const visitStatement = (n: ts.Node | undefined) =>
         visitStatementToFindCapturedVars(n, program, outerScope, currentScope);
-    if (!node || ts.isInterfaceDeclaration(node)) {
-        // TODO: Classes can contain captured vars. It's not good practice, but it is possible.
+    if (!node || ts.isInterfaceDeclaration(node) || ts.isClassDeclaration(node)) {
         return [];
     } else if (ts.isVariableStatement(node)) {
         return visitStatement(node.declarationList);
@@ -105,46 +104,6 @@ export function visitStatementToFindCapturedVars(
             ...visitStatement(node.thenStatement),
             ...visitStatement(node.elseStatement),
         ]));
-    } else if (ts.isClassDeclaration(node)) {
-        const classScope = [...currentScope, ...outerScope];
-
-        Class.visitClass(node, classScope, program, {
-            constructorDeclarationVisitor: (declaration, classVar, classOuterScope) => createAndAnalyseFunction(
-                    declaration,
-                    program,
-                    classOuterScope,
-                    (constr) => {
-                        program.addFunction(declaration, constr);
-                        classVar.setConstructor(constr);
-                    },
-                    classVar,
-                ).getCapturedVars(),
-            methodDeclarationVisitor: (declaration, classVar, classOuterScope) => createAndAnalyseFunction(
-                    declaration,
-                    program,
-                    classOuterScope,
-                    (method) => {
-                        program.addFunction(declaration, method);
-                        classVar.addMethod(method);
-                    },
-                    classVar,
-                ).getCapturedVars(),
-            propertyVisitor: (declaration, classVar, classOuterScope) => {
-                const declaredField = Variable.fromDeclaration(declaration, program);
-                classVar.addField(declaredField);
-                if (declaration.initializer) {
-                    const expressionAnalysis =
-                        visitExpressionForCapturedVars(declaration.initializer, classOuterScope, [], program);
-                    if (expressionAnalysis.funcDef) {
-                        program.addFunction(declaration, expressionAnalysis.funcDef);
-                    }
-                    return expressionAnalysis.capturedVars;
-                }
-                return [];
-            },
-        });
-
-        return [];
     } else if (ts.isWhileStatement(node)) {
         return visitStatement(node.statement);
     } else if (ts.isReturnStatement(node)) {
@@ -255,7 +214,6 @@ export function visitStatementToFindAssignments(
                 ));
             },
             propertyVisitor: (declaration, _1, classOuterScope) => {
-                /* Intentionally left empty */
                 const funcVar = program.getFunction(declaration);
                 if (!funcVar) {
                     return;

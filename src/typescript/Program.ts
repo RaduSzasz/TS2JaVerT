@@ -7,7 +7,9 @@ import { ForbiddenPredicate } from "../assertions/predicates/ForbiddenPredicate"
 import { IndexSignaturePredicate } from "../assertions/predicates/IndexSignaturePredicate";
 import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";
 import { Class } from "./Class";
+import { visitExpressionForCapturedVars } from "./Expression";
 import { Function } from "./functions/Function";
+import { createAndAnalyseFunction } from "./functions/FunctionCreator";
 import { Interface } from "./Interface";
 import {
     visitStatementToFindAssignments,
@@ -44,6 +46,8 @@ export class Program {
             this.sourceFileNode.statements
                     .map((statement) => visitStatementToFindDeclaredVars(statement, this)),
         );
+
+        this.completeClassDeclarations();
 
         this.determineCapturedVars();
         this.annotateAssignments();
@@ -107,6 +111,51 @@ export class Program {
         );
     }
 
+    private completeClassDeclarations() {
+        this.sourceFileNode.statements
+            .forEach((statement) => { if (ts.isClassDeclaration(statement)) {
+                Class.visitClass(statement, this.gamma, this, {
+                    constructorDeclarationVisitor: (declaration, classVar, classOuterScope) => {
+                        createAndAnalyseFunction(
+                            declaration,
+                            this,
+                            classOuterScope,
+                            (constr) => {
+                                this.addFunction(declaration, constr);
+                                classVar.setConstructor(constr);
+                            },
+                            classVar,
+                        );
+                    },
+                    methodDeclarationVisitor: (declaration, classVar, classOuterScope) => {
+                        createAndAnalyseFunction(
+                            declaration,
+                            this,
+                            classOuterScope,
+                            (method) => {
+                                this.addFunction(declaration, method);
+                                classVar.addMethod(method);
+                            },
+                            classVar,
+                        );
+                    },
+                    propertyVisitor: (declaration, classVar, classOuterScope) => {
+                        const declaredField = Variable.fromDeclaration(declaration, this);
+                        classVar.addField(declaredField);
+                        if (declaration.initializer) {
+                            const expressionAnalysis =
+                                visitExpressionForCapturedVars(declaration.initializer, classOuterScope, [], this);
+                            if (expressionAnalysis.funcDef) {
+                                this.addFunction(declaration, expressionAnalysis.funcDef);
+                            }
+                        }
+                    },
+                });
+            }});
+
+        Class.resolveAncestorsAndDescendents(this.classes);
+    }
+
     private findAllClassesAndInterfaces() {
         this.sourceFileNode.statements
             .map((statement) => {
@@ -119,7 +168,6 @@ export class Program {
                 }
             });
         Class.resolveParents(this.classes);
-        Class.resolveAncestorsAndDescendents(this.classes);
     }
 
     private annotateAssignments(): void {
