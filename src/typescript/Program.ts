@@ -2,6 +2,7 @@ import { flatMap, flatten, map } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../assertions/Assertion";
 import { printFunctionSpec } from "../assertions/FunctionSpec";
+import { ObjectPrototype } from "../assertions/ObjectPrototype";
 import { ForbiddenPredicate } from "../assertions/predicates/ForbiddenPredicate";
 import { IndexSignaturePredicate } from "../assertions/predicates/IndexSignaturePredicate";
 import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";
@@ -77,6 +78,7 @@ export class Program {
     public getPrototypeAssertion(): Assertion {
         return new SeparatingConjunctionList([
             ...map(this.classes, (cls) => cls.getProtoAssertion()),
+            new ObjectPrototype(),
         ]);
     }
 

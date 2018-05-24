@@ -1,4 +1,4 @@
-import {TypeFlags} from "../typescript/Types";
+import { TypeFlags } from "../typescript/Types";
 import { AssertionKind } from "./Assertion";
 import { AssertionObject } from "./AssertionObject";
 

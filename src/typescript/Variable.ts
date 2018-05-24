@@ -1,25 +1,14 @@
 import * as ts from "typescript";
 import * as uuid from "uuid";
-import { Assertion } from "../assertions/Assertion";
-import { CustomPredicate } from "../assertions/CustomPredicate";
-import { Disjunction } from "../assertions/Disjunction";
-import { Emp } from "../assertions/Emp";
+import { Assertion, typeToAssertion } from "../assertions/Assertion";
 import { FunctionObject } from "../assertions/FunctionObject";
 import { HardcodedStringAssertion } from "../assertions/HardcodedStringAssertion";
 import { ScopeAssertion } from "../assertions/ScopeAssertion";
 import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";
-import { TypesPredicate } from "../assertions/TypesPredicate";
 import { Class } from "./Class";
 import { Function } from "./functions/Function";
 import { Program } from "./Program";
-import {
-    isAnyType, isClassType,
-    isInterfaceType, isObjectLiteralType,
-    isPrimitiveType, isStringLiteralType, isUnionType,
-    Type,
-    TypeFlags,
-    typeFromTSType,
-} from "./Types";
+import { Type, TypeFlags, typeFromTSType } from "./Types";
 
 export interface AssignedVariable {
     assignedVar: Variable;
@@ -67,25 +56,21 @@ export class Variable {
         return false;
     }
 
+    public isLogicalVariable(): boolean {
+        return this.name !== "" && this.name.charAt(0) === "#";
+    }
+
     public toAssertion(): Assertion {
-        const { name, type } = this;
-        if (isPrimitiveType(type)) {
-            return new TypesPredicate(name, type.typeFlag);
-        } else if (isStringLiteralType(type)) {
-            return new HardcodedStringAssertion(`${name} === "${type.str}"`);
-        } else if (isAnyType(type)) {
-            return new Emp();
-        } else if (isInterfaceType(type)) {
-            return new CustomPredicate(type.name, name);
-        } else if (isObjectLiteralType(type)) {
-            return type.objectLiteralType.toAssertion(name);
-        } else if (isClassType(type)) {
-            return type.cls.getAssertion(name);
-        } else if (isUnionType(type)) {
-            return new Disjunction(type.types.map((t) => new Variable(this.name, t).toAssertion()));
+        if (this.isLogicalVariable()) {
+            return typeToAssertion(this.name, this.type);
         }
 
-        throw new Error(`Cannot convert type ${this.type.typeFlag} to assertion`);
+        const logicalVariable = Variable.logicalVariableFromVariable(this);
+
+        return new SeparatingConjunctionList([
+            new HardcodedStringAssertion(`(${this.name} == ${logicalVariable.name})`),
+            typeToAssertion(logicalVariable.name, logicalVariable.type),
+        ]);
     }
 
     public toAssertionExtractingScope(): Assertion {
