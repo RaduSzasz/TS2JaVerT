@@ -97,9 +97,9 @@ export class Function extends Variable {
         ]));
     }
 
-    protected generatePostCondition(): SeparatingConjunctionList {
+    protected generatePostCondition(): (thisAssertion: Assertion | undefined) => SeparatingConjunctionList {
         if (!this.capturedVars) {
-            throw new Error("Can not generate pre-condition before determining captured vars");
+            throw new Error("Can not generate post-condition before determining captured vars");
         }
         const protoAssertion = this.program.getPrototypeAssertion();
         const paramAssertions: Assertion[]
@@ -109,12 +109,17 @@ export class Function extends Variable {
             = this.capturedVars
                 .map((capturedVar) => capturedVar.toAssertionExtractingScope());
         const ret = Variable.newReturnVariable(this.returnType);
-        return new SeparatingConjunctionList(compact([
-            protoAssertion,
-            (this.classVar ? this.classVar.getAssertion("this") : undefined),
-            ...paramAssertions,
-            ...capturedVariableAssertions,
-            ret.toAssertion(),
-        ]));
+        return (thisAssertion: Assertion | undefined) => {
+            if ((thisAssertion && !this.classVar) || (this.classVar && !thisAssertion)) {
+                throw new Error("Class variable and this assertion must both be either falsey or truthy");
+            }
+            return new SeparatingConjunctionList(compact([
+                protoAssertion,
+                thisAssertion,
+                ...paramAssertions,
+                ...capturedVariableAssertions,
+                ret.toAssertion(),
+            ]));
+        };
     }
 }

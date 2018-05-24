@@ -33,6 +33,7 @@ export enum AssertionKind {
 export interface Assertion {
     kind: AssertionKind;
     toString(): string;
+    getThisAssertion(): Assertion | undefined;
 }
 
 export function isSeparatingConjunction(assertion: Assertion): assertion is SeparatingConjunctionList {

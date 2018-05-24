@@ -16,4 +16,8 @@ export class Disjunction extends AssertionObject {
     public toString(): string {
         throw new Error("Should never convert a disjunction to string!!");
     }
+
+    public getThisAssertion(): Assertion | undefined {
+        throw new Error("Should never try get the type of this in a disjunction");
+    }
 }

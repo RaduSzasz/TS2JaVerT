@@ -1,4 +1,4 @@
-import { flatMap } from "lodash";
+import { find, flatMap } from "lodash";
 import {
     Assertion,
     AssertionKind,
@@ -41,5 +41,9 @@ export class SeparatingConjunctionList extends AssertionObject {
                         .map((dnf) => new SeparatingConjunctionList([dnf, conj]));
             }, [new SeparatingConjunctionList([])]),
         );
+    }
+
+    public getThisAssertion(): Assertion | undefined {
+        return find(this.conjuncts);
     }
 }

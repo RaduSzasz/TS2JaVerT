@@ -5,4 +5,8 @@ export abstract class AssertionObject implements Assertion {
     protected constructor(kind: AssertionKind) {
         this.kind = kind;
     }
+
+    public getThisAssertion(): Assertion | undefined {
+        return undefined;
+    }
 }

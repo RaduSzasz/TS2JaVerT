@@ -22,7 +22,7 @@ export class Constructor extends Function {
         const regularFunctionSpec = super.generateAssertion();
         return {
             id: regularFunctionSpec.id,
-            post: this.generatePost(),
+            post: () => this.generatePost(),
             pre: this.generatePre(),
         };
     }
@@ -49,12 +49,12 @@ export class Constructor extends Function {
             throw new Error("Constructors must have associated class variable. Something went wrong!");
         }
         this.classVar = undefined;
-        const regularFunctionPre = super.generatePostCondition();
+        const regularPostGenerator = super.generatePostCondition();
         this.classVar = classVar;
 
         return new SeparatingConjunctionList([
             classVar.getExactAssertion("this"),
-            regularFunctionPre,
+            regularPostGenerator(undefined),
         ]);
     }
 }

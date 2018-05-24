@@ -9,4 +9,11 @@ export class CustomPredicate extends AssertionObject {
     public toString() {
         return `${this.predicateName}(${this.varName})`;
     }
+
+    public getThisAssertion() {
+        if (this.varName.startsWith("this")) {
+            return this;
+        }
+        return undefined;
+    }
 }
