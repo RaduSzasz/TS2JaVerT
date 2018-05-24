@@ -129,7 +129,7 @@ export class Class {
         ]);
         return `
         @pred ${predDef}:
-            ${predicate.toString()}
+            ${predicate.toString()};
 `;
     }
 
@@ -147,7 +147,7 @@ export class Class {
         ]).toDisjunctiveNormalForm();
         return `
         @pred ${this.getInstancePredicateName()}(+${o}, ${proto}):
-            ${predAssertion.disjuncts.map((def) => def.toString()).join(",\n")}
+            ${predAssertion.disjuncts.map((def) => def.toString()).join(",\n")};
 `;
     }
 

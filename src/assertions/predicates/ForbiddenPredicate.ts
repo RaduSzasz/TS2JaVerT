@@ -10,9 +10,8 @@ export class ForbiddenPredicate extends AssertionObject {
             ForbiddenPredicate.FORBIDDEN_FIELD_NAMES.map((forbiddenField) =>
                 new NoneAssertion(o, forbiddenField)));
         return `
-        ${ForbiddenPredicate.PREDICATE_NAME}(${o}) =
-            ${def}
-`;
+        @pred ${ForbiddenPredicate.PREDICATE_NAME}(${o}):
+            ${def};`;
     }
 
     private static readonly PREDICATE_NAME = "AbsentFields";

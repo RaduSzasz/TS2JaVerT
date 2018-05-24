@@ -6,8 +6,8 @@ const PRIMITIVE_TYPE_NAMES = {
     [TypeFlags.Number]: "Num",
     [TypeFlags.Boolean]: "Bool",
     [TypeFlags.String]: "Str",
-    [TypeFlags.Void]: "Undef",
-    [TypeFlags.Undefined]: "Undef",
+    [TypeFlags.Void]: "Undefined",
+    [TypeFlags.Undefined]: "Undefined",
 };
 export type PrimitiveType =
     TypeFlags.Number
