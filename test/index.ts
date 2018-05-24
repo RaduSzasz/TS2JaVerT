@@ -1,3 +1,5 @@
+import { HardcodedStringAssertion } from "../src/assertions/HardcodedStringAssertion";
+import { ObjectPrototype } from "../src/assertions/ObjectPrototype";
 import { ScopeAssertion } from "../src/assertions/ScopeAssertion";
 import { SeparatingConjunctionList } from "../src/assertions/SeparatingConjunctionList";
 import { TypesPredicate } from "../src/assertions/TypesPredicate";
@@ -17,6 +19,7 @@ describe("A suite for checking if we find identifiers in expressions", () => {
         const funcSpec = func.generateAssertion();
         expect(funcSpec.pre).toBeDefined();
         expect(funcSpec.pre).toEqual(new SeparatingConjunctionList([
+            new ObjectPrototype(),
             new ScopeAssertion("y", "#y"),
             new TypesPredicate("#y", TypeFlags.Number),
         ]));
@@ -34,10 +37,13 @@ describe("A suite for checking if we find identifiers in expressions", () => {
         expect(innerFunc.getName()).toEqual("g");
         const outerFuncSpec = outerFunc.generateAssertion();
         expect(outerFuncSpec.pre).toEqual(new SeparatingConjunctionList([
-            new TypesPredicate("x", TypeFlags.Number),
+            new ObjectPrototype(),
+            new HardcodedStringAssertion(`(x == #x)`),
+            new TypesPredicate("#x", TypeFlags.Number),
         ]));
         const innerFuncSpec = innerFunc.generateAssertion();
         expect(innerFuncSpec.pre).toEqual(new SeparatingConjunctionList([
+            new ObjectPrototype(),
             new ScopeAssertion("x", "#x"),
             new TypesPredicate("#x", TypeFlags.Number),
         ]));
