@@ -8,7 +8,7 @@ class IdGen {
     }
 
     public getId(): string {
-        var id = this.prefix + "_id_" + this.count;
+        var id: string = this.prefix + "_id_" + this.count;
         this.count = this.count + 1;
         return id;
     }
