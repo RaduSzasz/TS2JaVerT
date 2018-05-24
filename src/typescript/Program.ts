@@ -223,7 +223,8 @@ export class Program {
                 `@tactic assert(${new SeparatingConjunctionList(
                     assignedVars.map(({ assignedVar, currentScope }) =>
                         currentScope ? assignedVar.toAssertion() : assignedVar.toAssertionExtractingScope()),
-                ).toString()})`,
+                ).toDisjunctiveNormalForm().disjuncts
+                    .map((disjunct) => disjunct.toString()).join(",\n")})`,
                 true)
             : functionCommentedNode;
     }

@@ -53,7 +53,7 @@ export class Constructor extends Function {
         this.classVar = classVar;
 
         return new SeparatingConjunctionList([
-            classVar.getAssertion("this"),
+            classVar.getExactAssertion("this"),
             regularFunctionPre,
         ]);
     }

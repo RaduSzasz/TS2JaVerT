@@ -164,6 +164,12 @@ export class Class {
     }
 
     public getAssertion(instanceName: string): Assertion {
+        return new Disjunction(this.descendants.map((descendant) =>
+            descendant.getExactAssertion(instanceName),
+        ));
+    }
+
+    public getExactAssertion(instanceName: string): Assertion {
         const instancePredName = this.getInstancePredicateName();
         const protoLogicalVariable = this.getProtoLogicalVariableName();
         return new CustomPredicate(instancePredName, `${instanceName}, ${protoLogicalVariable}`);
