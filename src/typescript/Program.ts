@@ -343,7 +343,7 @@ export class Program {
                 ...map(this.indexSignatures, (i) => i.getPredicate()),
                 ...map(this.interfaces, (i) => i.toPredicate()),
                 ...flatMap(this.classes, (cls) => [cls.getInstancePredicate(), cls.getProtoPredicate()]),
-            ].join("\n\n");
+            ].join("\n");
             const commentedNode = ts.addSyntheticLeadingComment(
                 ts.createNotEmittedStatement(src.getFirstToken()),
                 ts.SyntaxKind.MultiLineCommentTrivia,

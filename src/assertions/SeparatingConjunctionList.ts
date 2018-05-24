@@ -44,6 +44,6 @@ export class SeparatingConjunctionList extends AssertionObject {
     }
 
     public getThisAssertion(): Assertion | undefined {
-        return find(this.conjuncts);
+        return find(this.conjuncts.map((conj) => conj.getThisAssertion()));
     }
 }

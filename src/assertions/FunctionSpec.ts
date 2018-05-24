@@ -21,9 +21,8 @@ export function printFunctionSpec(funcSpec: FunctionSpec) {
 
     return `
         @id ${funcSpec.id}
-
         ${specs.map((spec) => `
         @pre ${spec.pre.toString()}
-        @post ${spec.post.toString()}`)}
+        @post ${spec.post.toString()}`).join("\n")}
 `;
 }
