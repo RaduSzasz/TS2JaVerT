@@ -38,6 +38,7 @@ export function visitExpressionForCapturedVars(
     if (!node ||
         ts.isStringLiteral(node) ||
         ts.isNumericLiteral(node) ||
+        node.kind === ts.SyntaxKind.SuperKeyword ||
         node.kind === ts.SyntaxKind.TrueKeyword || node.kind === ts.SyntaxKind.FalseKeyword ||
         (ts.isToken(node) && node.kind === ts.SyntaxKind.ThisKeyword)
     ) {
@@ -126,6 +127,7 @@ export function visitExpressionToFindAssignments(
         ts.isStringLiteral(node) ||
         ts.isNumericLiteral(node) ||
         ts.isIdentifier(node) ||
+        node.kind === ts.SyntaxKind.SuperKeyword ||
         node.kind === ts.SyntaxKind.TrueKeyword || node.kind === ts.SyntaxKind.FalseKeyword ||
         (ts.isToken(node) && node.kind === ts.SyntaxKind.ThisKeyword)) {
 

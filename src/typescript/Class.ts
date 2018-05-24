@@ -210,7 +210,7 @@ export class Class {
     private updateAncestorsAndDescendants(): boolean {
         if (this.inheritingFrom) {
             let didUpdate: boolean = false;
-            const inSubtree = [this, ...this.descendants];
+            const inSubtree = [this.inheritingFrom, ...this.descendants];
             const above = [this, ...this.inheritingFrom.ancestors];
             if (!isEqual(this.inheritingFrom.descendants, inSubtree)) {
                 this.inheritingFrom.descendants = inSubtree;
