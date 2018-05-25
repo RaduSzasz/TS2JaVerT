@@ -34,6 +34,24 @@ export class Program {
 
     constructor(fileName: string, options?: ts.CompilerOptions) {
         this.program = ts.createProgram([fileName], options || {});
+        const emitResult = this.program.emit();
+        const allDiagnostics = ts.getPreEmitDiagnostics(this.program).concat(emitResult.diagnostics);
+
+        allDiagnostics.forEach((diagnostic) => {
+            if (diagnostic.file) {
+                const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
+                const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
+                process.stderr.write(`${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}\n`);
+            } else {
+                process.stderr.write(`${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}\n`);
+            }
+        });
+
+        const exitCode = emitResult.emitSkipped || allDiagnostics.length > 0 ? 1 : 0;
+        if (exitCode) {
+            process.exit(1);
+        }
+
         const sourceFiles = this.program.getSourceFiles()
             .filter((sourceFile) => !sourceFile.isDeclarationFile);
         if (sourceFiles.length !== 1) {
