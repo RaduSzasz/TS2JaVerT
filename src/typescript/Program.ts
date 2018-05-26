@@ -33,7 +33,10 @@ export class Program {
     private readonly gamma: Variable[];
 
     constructor(fileName: string, options?: ts.CompilerOptions) {
+        console.time("initialization");
         this.program = ts.createProgram([fileName], options || {});
+        console.timeEnd("initialization");
+        console.time("regular-ts-compilation");
         const emitResult = this.program.emit();
         const allDiagnostics = ts.getPreEmitDiagnostics(this.program).concat(emitResult.diagnostics);
 
@@ -51,7 +54,9 @@ export class Program {
         if (exitCode) {
             process.exit(1);
         }
+        console.timeEnd("regular-ts-compilation");
 
+        console.time("gather-type-info");
         const sourceFiles = this.program.getSourceFiles()
             .filter((sourceFile) => !sourceFile.isDeclarationFile);
         if (sourceFiles.length !== 1) {
@@ -69,6 +74,7 @@ export class Program {
 
         this.determineCapturedVars();
         this.annotateAssignments();
+        console.timeEnd("gather-type-info");
     }
 
     public getTypeChecker(): ts.TypeChecker {
@@ -116,6 +122,7 @@ export class Program {
     }
 
     public print(): void {
+        console.time("annotate-ast");
         this.program.emit(this.sourceFileNode,
             undefined,
             undefined,

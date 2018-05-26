@@ -9,13 +9,13 @@ class Animal {
 }
 
 class Cat extends Animal {
-    private name: string;
+    private catName: string;
     constructor(position: number, name: string) {
         super(position);
-        this.name = name;
+        this.catName = name;
     }
     public meow(): void {
-        console.log("Meow!! I’m " + this.name + "!");
+        console.log("Meow!! I’m " + this.catName + "!");
     }
 }
 

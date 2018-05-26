@@ -139,6 +139,7 @@ const createEmitMissingSyntheticCommentsAfterTypescriptTransform = (program: Pro
         const nodePath: ts.Node[] = [];
         visitNode(sourceFile);
         (context as TransformationContext).fileContext = undefined;
+        console.timeEnd("annotate-ast");
         return sourceFile;
 
         function visitNode(node: ts.Node) {
