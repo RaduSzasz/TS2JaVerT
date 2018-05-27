@@ -162,33 +162,25 @@ export function visitExpressionToFindAssignments(
         return visitExpression(node.expression);
     } else if (ts.isBinaryExpression(node) &&
         node.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+
         const rightResult = visitExpression(node.right);
+        const leftResult = visitExpression(node.left);
 
-        let assignedVar: AssignedVariable | undefined;
+        const obj = ts.isIdentifier(node.left)
+            ? node.left
+            : ((ts.isPropertyAccessExpression(node.left) || ts.isElementAccessExpression(node.left))
+                ? node.left.expression
+                : undefined);
 
-        if (ts.isIdentifier(node.left)) {
-            assignedVar = getAssignedVariable(node.left.text, outerScope, currentScope);
+        if (obj && ts.isIdentifier(obj)) {
+            const assignedVar = getAssignedVariable(obj.text, outerScope, currentScope);
             if (!assignedVar) {
-                throw new Error(`Cannot find ${node.left.text} in scope`);
+                throw new Error(`Cannot find ${obj.text} in scope`);
             }
-        } else if (ts.isElementAccessExpression(node.left)) {
-            const obj = node.left.expression;
-            if (ts.isIdentifier(obj)) {
-                assignedVar = getAssignedVariable(obj.text, outerScope, currentScope);
-                if (!assignedVar) {
-                    throw new Error(`Cannot find ${obj.text} in scope`);
-                }
-            }
-        } else if (ts.isPropertyAccessExpression(node.left)) {
-            const obj = node.left.expression;
-            if (ts.isIdentifier(obj)) {
-                assignedVar = getAssignedVariable(obj.text, outerScope, currentScope);
-                if (!assignedVar) {
-                    throw new Error(`Cannot find ${obj.text} in scope`);
-                }
-            }
+            return uniqWith(compact([assignedVar, ...rightResult, ...leftResult]), isEqual);
         }
-        return uniqWith(compact([assignedVar, ...rightResult]), isEqual);
+
+        return uniqWith(compact([...rightResult, ...leftResult]), isEqual);
     } else if (ts.isBinaryExpression(node)) {
         return uniqWith(compact([
             ...visitExpression(node.left),

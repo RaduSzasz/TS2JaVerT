@@ -1,4 +1,4 @@
-import { flatMap, flatten, map } from "lodash";
+import { flatMap, flatten, isEqual, map, uniqWith } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../assertions/Assertion";
 import { printFunctionSpec } from "../assertions/FunctionSpec";
@@ -110,8 +110,8 @@ export class Program {
 
     public addAssignments(node: ts.Node, variables: AssignedVariable[]): void {
         if (variables.length) {
-            const nodeAssignments = this.assignments.get(node) || [];
-            this.assignments.set(node, nodeAssignments.concat(variables));
+            const nodeAssignments = this.assignments.get(node) || [] as AssignedVariable[];
+            this.assignments.set(node, uniqWith([...nodeAssignments, ...variables], isEqual));
         }
     }
 
