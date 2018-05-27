@@ -1,6 +1,7 @@
 import * as ts from "typescript";
 import * as uuid from "uuid";
 import { Assertion, typeToAssertion } from "../assertions/Assertion";
+import { Emp } from "../assertions/Emp";
 import { FunctionObject } from "../assertions/FunctionObject";
 import { HardcodedStringAssertion } from "../assertions/HardcodedStringAssertion";
 import { ScopeAssertion } from "../assertions/ScopeAssertion";
@@ -8,7 +9,7 @@ import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionLi
 import { Class } from "./Class";
 import { Function } from "./functions/Function";
 import { Program } from "./Program";
-import { Type, TypeFlags, typeFromTSType } from "./Types";
+import { isAnyType, Type, TypeFlags, typeFromTSType } from "./Types";
 
 export interface AssignedVariable {
     assignedVar: Variable;
@@ -67,10 +68,12 @@ export class Variable {
 
         const logicalVariable = Variable.logicalVariableFromVariable(this);
 
-        return new SeparatingConjunctionList([
-            new HardcodedStringAssertion(`(${this.name} == ${logicalVariable.name})`),
-            typeToAssertion(logicalVariable.name, logicalVariable.type),
-        ]);
+        return isAnyType(this.type)
+            ? new Emp()
+            : new SeparatingConjunctionList([
+                    new HardcodedStringAssertion(`(${this.name} == ${logicalVariable.name})`),
+                    typeToAssertion(logicalVariable.name, logicalVariable.type),
+            ]);
     }
 
     public toAssertionExtractingScope(): Assertion {

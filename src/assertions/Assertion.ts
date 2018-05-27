@@ -2,7 +2,7 @@ import {
     isAnyType, isClassType,
     isInterfaceType, isObjectLiteralType,
     isPrimitiveType,
-    isStringLiteralType, isUnionType,
+    isStringLiteralType, isThisType, isUnionType,
     Type,
 } from "../typescript/Types";
 import { Variable } from "../typescript/Variable";
@@ -64,6 +64,8 @@ export function typeToAssertion(name: string, type: Type): Assertion {
         return type.cls.getAssertion(name);
     } else if (isUnionType(type)) {
         return new Disjunction(type.types.map((t) => new Variable(name, t).toAssertion()));
+    } else if (isThisType(type)) {
+        return new HardcodedStringAssertion(`(${name} === this)`);
     }
     throw new Error(`Cannot convert type ${type.typeFlag} to assertion`);
 }

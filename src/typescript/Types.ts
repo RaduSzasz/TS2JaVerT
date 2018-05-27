@@ -18,6 +18,7 @@ export enum TypeFlags {
     Union,
     Function,
     StringLiteral,
+    This,
 }
 
 export interface Type {
@@ -40,6 +41,13 @@ export interface AnyType extends Type {
 }
 export function isAnyType(type: Type): type is AnyType {
     return type.typeFlag === TypeFlags.Any;
+}
+
+export interface ThisType extends Type {
+    typeFlag: TypeFlags.This;
+}
+export function isThisType(type: Type): type is ThisType {
+    return type.typeFlag === TypeFlags.This;
 }
 
 export interface InterfaceType extends Type {

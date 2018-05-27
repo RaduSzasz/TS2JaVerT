@@ -110,6 +110,10 @@ export class Class {
 
     }
 
+    public doesClassInherit(): boolean {
+        return this.inheritingFrom !== undefined;
+    }
+
     public addField(field: Variable): void {
         this.properties.push(field);
     }

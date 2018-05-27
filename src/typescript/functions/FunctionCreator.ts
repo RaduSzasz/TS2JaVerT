@@ -96,7 +96,13 @@ function createFunctionInstance(
         if (!classVar) {
             throw new Error("Constructors must have associated class variable. Something went wrong!");
         }
-        return new Constructor(program, returnType, params, name, classVar);
+        const hasExplicitReturn = classVar.doesClassInherit();
+        return new Constructor(
+            program,
+            hasExplicitReturn ? { typeFlag: TypeFlags.This } : { typeFlag: TypeFlags.Any },
+            params,
+            name,
+            classVar);
     }
     return new Function(program, returnType, params, name, classVar);
 }
