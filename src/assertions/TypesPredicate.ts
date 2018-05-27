@@ -8,12 +8,14 @@ const PRIMITIVE_TYPE_NAMES = {
     [TypeFlags.String]: "Str",
     [TypeFlags.Void]: "Empty",
     [TypeFlags.Undefined]: "Undefined",
+    [TypeFlags.Null]: "Null",
 };
 export type PrimitiveType =
     TypeFlags.Number
     | TypeFlags.Boolean
     | TypeFlags.String
     | TypeFlags.Undefined
+    | TypeFlags.Null
     | TypeFlags.Void;
 
 export class TypesPredicate extends AssertionObject {

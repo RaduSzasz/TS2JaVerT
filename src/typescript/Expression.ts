@@ -32,13 +32,12 @@ export function visitExpressionForCapturedVars(
     currentScope: Variable[],
     program: Program,
 ): ExpressionAnalysis {
-
     const visitExpressionPreservingTypeEnvs
         = (n: ts.Node | undefined) => visitExpressionForCapturedVars(n, outerScope, currentScope, program);
     if (!node ||
         ts.isStringLiteral(node) ||
         ts.isNumericLiteral(node) ||
-        node.kind === ts.SyntaxKind.SuperKeyword ||
+        node.kind === ts.SyntaxKind.SuperKeyword || node.kind === ts.SyntaxKind.NullKeyword ||
         node.kind === ts.SyntaxKind.TrueKeyword || node.kind === ts.SyntaxKind.FalseKeyword ||
         (ts.isToken(node) && node.kind === ts.SyntaxKind.ThisKeyword)
     ) {
@@ -127,7 +126,7 @@ export function visitExpressionToFindAssignments(
         ts.isStringLiteral(node) ||
         ts.isNumericLiteral(node) ||
         ts.isIdentifier(node) ||
-        node.kind === ts.SyntaxKind.SuperKeyword ||
+        node.kind === ts.SyntaxKind.SuperKeyword || node.kind === ts.SyntaxKind.NullKeyword ||
         node.kind === ts.SyntaxKind.TrueKeyword || node.kind === ts.SyntaxKind.FalseKeyword ||
         (ts.isToken(node) && node.kind === ts.SyntaxKind.ThisKeyword)) {
 

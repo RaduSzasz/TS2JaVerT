@@ -1,19 +1,19 @@
 interface BSTNode {
     value: number;
-    left: BSTNode | undefined;
-    right: BSTNode | undefined;
+    left: BSTNode | null;
+    right: BSTNode | null;
 }
 
 function makeNode(v: number): BSTNode {
     return {
         value: v,
-        left: undefined,
-        right: undefined,
+        left: null,
+        right: null,
     };
 }
 
-function insert(v: number, t: BSTNode | undefined): BSTNode {
-    if (t === undefined) {
+function insert(v: number, t: BSTNode | null): BSTNode {
+    if (t === null) {
         return makeNode(v);
     }
 
@@ -26,8 +26,8 @@ function insert(v: number, t: BSTNode | undefined): BSTNode {
     return t;
 }
 
-function find(v: number, t: BSTNode | undefined): boolean {
-    if (t === undefined) {
+function find(v: number, t: BSTNode | null): boolean {
+    if (t === null) {
         return false;
     } else if (v === t.value) {
         return true;
@@ -39,21 +39,21 @@ function find(v: number, t: BSTNode | undefined): boolean {
 }
 
 function find_min(t: BSTNode): number {
-    if (t.left === undefined) {
+    if (t.left === null) {
         return t.value;
     }
     return find_min(t.left);
 }
 
-function remove(v: number, t: BSTNode | undefined): BSTNode | undefined {
-    if (t === undefined) {
-        return undefined;
+function remove(v: number, t: BSTNode | null): BSTNode | null {
+    if (t === null) {
+        return null;
     }
 
     if (v === t.value) {
-        if (t.left === undefined) {
+        if (t.left === null) {
             return t.right;
-        } else if (t.right === undefined) {
+        } else if (t.right === null) {
             return t.left;
         } else {
             var min: number = find_min(t.right);

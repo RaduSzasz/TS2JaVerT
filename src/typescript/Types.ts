@@ -10,6 +10,7 @@ export enum TypeFlags {
     Any,
     Void,
     Undefined,
+    Null,
     Boolean,
     Number,
     String,
@@ -34,7 +35,8 @@ export function isPrimitiveType(type: Type): type is PrimitiveTypeInterface {
         type.typeFlag === TypeFlags.String ||
         type.typeFlag === TypeFlags.Boolean ||
         type.typeFlag === TypeFlags.Void ||
-        type.typeFlag === TypeFlags.Undefined;
+        type.typeFlag === TypeFlags.Undefined ||
+        type.typeFlag === TypeFlags.Null;
 }
 
 export interface AnyType extends Type {
@@ -129,6 +131,8 @@ export function typeFromTSType(tsTypeNode: ts.TypeNode, program: Program): Type 
         return { typeFlag: TypeFlags.Boolean };
     } else if (tsType.flags & ts.TypeFlags.Undefined) {
         return { typeFlag: TypeFlags.Undefined };
+    } else if (tsType.flags & ts.TypeFlags.Null) {
+        return { typeFlag: TypeFlags.Null };
     } else if (tsType.flags & ts.TypeFlags.StringLiteral) {
         return {
             str: (tsType as ts.StringLiteralType).value,
