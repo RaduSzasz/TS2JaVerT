@@ -22,6 +22,7 @@ export enum AssertionKind {
     ForbiddenFields,
     FunctionObject,
     HardcodedString,
+    InSetAssertion,
     JSObject,
     None,
     ObjectPrototype,

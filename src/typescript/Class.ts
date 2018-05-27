@@ -171,9 +171,9 @@ export class Class {
         ));
     }
 
-    public getExactAssertion(instanceName: string): Assertion {
+    public getExactAssertion(instanceName: string, protoLogicalVariable?: string): Assertion {
         const instancePredName = this.getInstancePredicateName();
-        const protoLogicalVariable = this.getProtoLogicalVariableName();
+        protoLogicalVariable = protoLogicalVariable || this.getProtoLogicalVariableName();
         return new CustomPredicate(instancePredName, `${instanceName}, ${protoLogicalVariable}`);
     }
 
@@ -207,6 +207,10 @@ export class Class {
         }
 
         this.constr = constr;
+    }
+
+    public getDescendantProtosSet(): string[] {
+        return this.descendants.map((d) => d.getProtoLogicalVariableName());
     }
 
     private updateAncestorsAndDescendants(): boolean {

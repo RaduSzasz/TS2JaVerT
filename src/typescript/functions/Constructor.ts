@@ -1,5 +1,6 @@
 import { EMPTY_SET, EmptyFields } from "../../assertions/EmptyFields";
 import { FunctionSpec } from "../../assertions/FunctionSpec";
+import { InSetAssertion } from "../../assertions/InSetAssertion";
 import { JSObject } from "../../assertions/JSObject";
 import { SeparatingConjunctionList } from "../../assertions/SeparatingConjunctionList";
 import { Class } from "../Class";
@@ -37,8 +38,9 @@ export class Constructor extends Function {
         this.classVar = classVar;
 
         return new SeparatingConjunctionList([
-            new JSObject("this", classVar.getProtoLogicalVariableName()),
+            new JSObject("this", "#thisproto"),
             new EmptyFields("this", EMPTY_SET),
+            new InSetAssertion("#thisproto", classVar.getDescendantProtosSet()),
             regularFunctionPre,
         ]);
     }
@@ -50,11 +52,10 @@ export class Constructor extends Function {
         }
         this.classVar = undefined;
         const regularPostCondition = this.generatePostCondition()(undefined);
-
         this.classVar = classVar;
 
         return new SeparatingConjunctionList([
-            classVar.getExactAssertion("this"),
+            classVar.getExactAssertion("this", "#thisproto"),
             regularPostCondition,
         ]);
     }
