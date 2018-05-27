@@ -1,3 +1,4 @@
+import { isEqual, uniqWith } from "lodash";
 import * as ts from "typescript";
 import { PrimitiveType } from "../assertions/TypesPredicate";
 import { Class } from "./Class";
@@ -96,15 +97,27 @@ export function isUnionType(type: Type): type is UnionType {
     return type.typeFlag === TypeFlags.Union;
 }
 
+export function createOptionalType(type: Type) {
+    if (isUnionType(type)) {
+        return {
+            typeFlag: TypeFlags.Union,
+            types: uniqWith([...type.types, { typeFlag: TypeFlags.Undefined } as Type], isEqual),
+        };
+    }
+    return {
+        typeFlag: TypeFlags.Union,
+        types: [type, { typeFlag: TypeFlags.Undefined } as Type],
+    };
+}
+
 export function typeFromTSType(tsTypeNode: ts.TypeNode, program: Program): Type {
     const checker = program.getTypeChecker();
     const tsType = checker.getTypeFromTypeNode(tsTypeNode);
     if (ts.isUnionTypeNode(tsTypeNode)) {
-        const returnVal = {
+        return {
             typeFlag: TypeFlags.Union,
             types: tsTypeNode.types.map((t) => typeFromTSType(t, program)),
         } as UnionType;
-        return returnVal;
         /* tslint:disable:no-bitwise */
     } else if (tsType.flags & ts.TypeFlags.Number) {
         return { typeFlag: TypeFlags.Number };

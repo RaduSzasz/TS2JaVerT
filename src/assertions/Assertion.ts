@@ -5,7 +5,6 @@ import {
     isStringLiteralType, isThisType, isUnionType,
     Type,
 } from "../typescript/Types";
-import { Variable } from "../typescript/Variable";
 import { CustomPredicate } from "./CustomPredicate";
 import { Disjunction } from "./Disjunction";
 import { Emp } from "./Emp";
@@ -63,7 +62,7 @@ export function typeToAssertion(name: string, type: Type): Assertion {
     } else if (isClassType(type)) {
         return type.cls.getAssertion(name);
     } else if (isUnionType(type)) {
-        return new Disjunction(type.types.map((t) => new Variable(name, t).toAssertion()));
+        return new Disjunction(type.types.map((t) => typeToAssertion(name, t)));
     } else if (isThisType(type)) {
         return new HardcodedStringAssertion(`(${name} === this)`);
     }

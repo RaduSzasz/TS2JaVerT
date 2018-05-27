@@ -147,10 +147,13 @@ export class Class {
         const predAssertion: Disjunction = new SeparatingConjunctionList([
             new JSObject(o, proto),
             ...nPlus.map((namedMethod: string) => new NoneAssertion(o, namedMethod)),
-            ...this.properties.map((prop) => new SeparatingConjunctionList([
-                new DataProp(o, prop.name, Variable.logicalVariableFromVariable(prop)),
-                Variable.logicalVariableFromVariable(prop).toAssertion(),
-            ])),
+            ...this.properties.map((prop) => {
+                const logicalVar = Variable.logicalVariableFromVariable(prop);
+                return new SeparatingConjunctionList([
+                    new DataProp(o, prop.name, logicalVar),
+                    logicalVar.toAssertion(),
+                ]);
+            }),
         ]).toDisjunctiveNormalForm();
         return `
         @pred ${this.getInstancePredicateName()}(+${o}, ${proto}):

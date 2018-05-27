@@ -9,7 +9,7 @@ import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionLi
 import { Class } from "./Class";
 import { Function } from "./functions/Function";
 import { Program } from "./Program";
-import { isAnyType, Type, TypeFlags, typeFromTSType } from "./Types";
+import { createOptionalType, isAnyType, Type, TypeFlags, typeFromTSType } from "./Types";
 
 export interface AssignedVariable {
     assignedVar: Variable;
@@ -23,6 +23,7 @@ export class Variable {
     ): Variable {
         const checker = program.getTypeChecker();
         const nameSymbol = checker.getSymbolAtLocation(declaration.name);
+        const optional = !ts.isVariableDeclaration(declaration) && declaration.questionToken;
 
         if (!nameSymbol) {
             throw new Error("Cannot create Variable! Cannot retrieve variable name symbol");
@@ -30,7 +31,8 @@ export class Variable {
             throw new Error("Cannot create Variable! Property declaration has no associated type node");
         }
 
-        return new Variable(nameSymbol.name, typeFromTSType(declaration.type, program));
+        const varType = typeFromTSType(declaration.type, program);
+        return new Variable(nameSymbol.name, optional ? createOptionalType(varType) : varType);
     }
 
     public static newReturnVariable(type: Type): Variable {
@@ -67,7 +69,6 @@ export class Variable {
         }
 
         const logicalVariable = Variable.logicalVariableFromVariable(this);
-
         return isAnyType(this.type)
             ? new Emp()
             : new SeparatingConjunctionList([
