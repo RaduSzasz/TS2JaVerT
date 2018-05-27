@@ -267,6 +267,18 @@ export class Program {
                 node.heritageClauses || [],
                 ts.visitNodes(node.members, this.addClassMemberSpecVisitor),
             );
+        } else if (ts.isIfStatement(node)) {
+            return ts.updateIf(
+                node,
+                ts.visitNode(node.expression, this.addFunctionSpecVisitor),
+                ts.visitNode(node.thenStatement, this.addFunctionSpecVisitor),
+                ts.visitNode(node.elseStatement, this.addFunctionSpecVisitor),
+            );
+        } else if (ts.isBlock(node)) {
+            return ts.updateBlock(
+                node,
+                ts.visitNodes(node.statements, this.addFunctionSpecVisitor),
+            );
         }
 
         return node;
@@ -276,6 +288,7 @@ export class Program {
         const funcVar = this.functions.get(node);
         const assignedVars = this.assignments.get(node);
         const annotatedNode = this.generateAnnotatedNode(node, funcVar);
+
         const functionCommentedNode = funcVar
             ? ts.addSyntheticLeadingComment(annotatedNode,
                 ts.SyntaxKind.MultiLineCommentTrivia,

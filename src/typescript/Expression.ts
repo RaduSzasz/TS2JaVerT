@@ -161,15 +161,33 @@ export function visitExpressionToFindAssignments(
     } else if (ts.isAsExpression(node)) {
         return visitExpression(node.expression);
     } else if (ts.isBinaryExpression(node) &&
-        node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
-        ts.isIdentifier(node.left)
-    ) {
-
-        const assignedVar = getAssignedVariable(node.left.text, outerScope, currentScope);
-        if (!assignedVar) {
-            throw new Error(`Cannot find ${node.left.text} in scope`);
-        }
+        node.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
         const rightResult = visitExpression(node.right);
+
+        let assignedVar: AssignedVariable | undefined;
+
+        if (ts.isIdentifier(node.left)) {
+            assignedVar = getAssignedVariable(node.left.text, outerScope, currentScope);
+            if (!assignedVar) {
+                throw new Error(`Cannot find ${node.left.text} in scope`);
+            }
+        } else if (ts.isElementAccessExpression(node.left)) {
+            const obj = node.left.expression;
+            if (ts.isIdentifier(obj)) {
+                assignedVar = getAssignedVariable(obj.text, outerScope, currentScope);
+                if (!assignedVar) {
+                    throw new Error(`Cannot find ${obj.text} in scope`);
+                }
+            }
+        } else if (ts.isPropertyAccessExpression(node.left)) {
+            const obj = node.left.expression;
+            if (ts.isIdentifier(obj)) {
+                assignedVar = getAssignedVariable(obj.text, outerScope, currentScope);
+                if (!assignedVar) {
+                    throw new Error(`Cannot find ${obj.text} in scope`);
+                }
+            }
+        }
         return uniqWith(compact([assignedVar, ...rightResult]), isEqual);
     } else if (ts.isBinaryExpression(node)) {
         return uniqWith(compact([
