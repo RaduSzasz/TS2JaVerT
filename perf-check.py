@@ -1,7 +1,7 @@
 from subprocess import run, PIPE
 import re
 
-NO_EXECS = 5
+NO_EXECS = 10
 EXECUTION_STAGE_TIME_REGEX = re.compile('b\'(.*): [-+]?(\d+([.,]\d*)?|[.,]\d+)([eE][-+]?\d+)?ms')
 
 def average_execution_time(case):
@@ -17,3 +17,5 @@ def average_execution_time(case):
     print(times)
 
 average_execution_time("./test/testPrograms/SimpleExtendingClasses.ts")
+average_execution_time("./test/testPrograms/JaVerTIdGen.ts")
+average_execution_time("./test/testPrograms/ReportDynamic.ts")

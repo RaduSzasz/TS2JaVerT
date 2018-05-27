@@ -5,8 +5,7 @@ const args = yargs
     .requiresArg("input")
     .argv;
 
-console.time('program-total');
+console.time("program-total");
 const program = new Program(args.input);
 program.print();
-console.timeEnd('program-total');
-
+console.timeEnd("program-total");
