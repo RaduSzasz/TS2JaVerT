@@ -1,70 +1,66 @@
-interface BSTNode {
-    value: number;
-    left: BSTNode | null;
-    right: BSTNode | null;
-}
+class BST {
+    private value: number;
+    private left: BST | null;
+    private right: BST | null;
 
-function makeNode(v: number): BSTNode {
-    return {
-        value: v,
-        left: null,
-        right: null,
-    };
-}
-
-function insert(v: number, t: BSTNode | null): BSTNode {
-    if (t === null) {
-        return makeNode(v);
+    constructor(v: number) {
+        this.value = v;
+        this.left = null;
+        this.right = null;
     }
 
-    if (v < t.value) {
-        t.left = insert(v, t.left);
-    } else if (v > t.value) {
-        t.right = insert(v, t.right);
-    }
-
-    return t;
-}
-
-function find(v: number, t: BSTNode | null): boolean {
-    if (t === null) {
-        return false;
-    } else if (v === t.value) {
-        return true;
-    } else if (v < t.value) {
-        return find(v, t.left);
-    } else {
-        return find(v, t.right);
-    }
-}
-
-function find_min(t: BSTNode): number {
-    if (t.left === null) {
-        return t.value;
-    }
-    return find_min(t.left);
-}
-
-function remove(v: number, t: BSTNode | null): BSTNode | null {
-    if (t === null) {
-        return null;
-    }
-
-    if (v === t.value) {
-        if (t.left === null) {
-            return t.right;
-        } else if (t.right === null) {
-            return t.left;
-        } else {
-            var min: number = find_min(t.right);
-            t.right = remove(min, t.right);
-            t.value = min;
+    public insert(v: number): void {
+        if (v < this.value) {
+            if (this.left) {
+                this.left.insert(v);
+            } else {
+                this.left = new BST(v);
+            }
+        } else if (v > this.value) {
+            if (this.right) {
+                this.right.insert(v);
+            } else {
+                this.right = new BST(v);
+            }
         }
-    } else if (v < t.value) {
-        t.left = remove(v, t.left);
-    } else {
-        t.right = remove(v, t.right);
     }
 
-    return t;
+    public find(v: number): boolean {
+        if (v === this.value) {
+            return true;
+        } else if (v < this.value && this.left) {
+            return this.left.find(v);
+        } else if (this.right) {
+            return this.right.find(v);
+        }
+
+        return false;
+    }
+
+    public find_min(): number {
+        if (this.left === null) {
+            return this.value;
+        }
+        return this.left.find_min();
+    }
+
+    public remove(v: number): BST | null {
+        if (v === this.value) {
+            if (this.left === null) {
+                return this.right;
+            } else if (this.right === null) {
+                return this.left;
+            } else {
+                var min: number = this.right.find_min();
+                this.right = this.right.remove(min);
+                this.value = min;
+            }
+        } else if (v < this.value && this.left) {
+            this.left = this.left.remove(v);
+        } else if (this.right) {
+            this.right = this.right.remove(v);
+        }
+
+        return this;
+    }
 }
