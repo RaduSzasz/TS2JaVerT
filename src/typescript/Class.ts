@@ -183,7 +183,7 @@ export class Class {
     }
 
     public getProtoLogicalVariableName(): string {
-        return `#${this.name}proto`;
+        return `$l${this.name}proto`;
     }
 
     public getAssertion(instanceName: string): Assertion {

@@ -9,6 +9,6 @@ export class EmptyFields extends AssertionObject {
     }
 
     public toString() {
-        return `empty_fields(${this.varName} : -{ ${this.fieldSet.join(", ")} }-)`;
+        return `empty_fields(${this.varName} : -{ ${this.fieldSet.map((f) => `"${f}"`).join(", ")} }-)`;
     }
 }
