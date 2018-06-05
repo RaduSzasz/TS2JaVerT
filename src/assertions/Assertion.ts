@@ -9,6 +9,7 @@ import { CustomPredicate } from "./CustomPredicate";
 import { Disjunction } from "./Disjunction";
 import { Emp } from "./Emp";
 import { HardcodedStringAssertion } from "./HardcodedStringAssertion";
+import { JSObject } from "./JSObject";
 import { SeparatingConjunctionList } from "./SeparatingConjunctionList";
 import { TypesPredicate } from "./TypesPredicate";
 
@@ -46,6 +47,10 @@ export function isDisjunction(assertion: Assertion): assertion is Disjunction {
 
 export function isEmp(assertion: Assertion): assertion is Emp {
     return assertion.kind === AssertionKind.Emp;
+}
+
+export function isJSObject(assertion: Assertion): assertion is JSObject {
+    return assertion.kind === AssertionKind.JSObject;
 }
 
 export function typeToAssertion(name: string, type: Type): Assertion {

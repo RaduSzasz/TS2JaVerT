@@ -1,3 +1,4 @@
+import { Assertion, isJSObject } from "../../assertions/Assertion";
 import { Disjunction } from "../../assertions/Disjunction";
 import { EMPTY_SET, EmptyFields } from "../../assertions/EmptyFields";
 import { FunctionSpec } from "../../assertions/FunctionSpec";
@@ -23,7 +24,7 @@ export class Constructor extends Function {
         const regularFunctionSpec = super.generateAssertion();
         return {
             id: regularFunctionSpec.id,
-            post: this.generatePost.bind(this),
+            post: this.generatePost(),
             pre: this.generatePre(),
         };
     }
@@ -46,7 +47,7 @@ export class Constructor extends Function {
         ]);
     }
 
-    private generatePost(): SeparatingConjunctionList {
+    private generatePost(): (thisAssertion: Assertion | undefined) => SeparatingConjunctionList {
         const classVar = this.classVar;
         if (!classVar) {
             throw new Error("Constructors must have associated class variable. Something went wrong!");
@@ -55,9 +56,14 @@ export class Constructor extends Function {
         const regularPostCondition = this.generatePostCondition()(undefined);
         this.classVar = classVar;
 
-        return new SeparatingConjunctionList([
-            classVar.getExactAssertion("this", "#thisproto"),
-            regularPostCondition,
-        ]);
+        return (thisAssertion: Assertion | undefined) => {
+            if (thisAssertion && isJSObject(thisAssertion)) {
+                return new SeparatingConjunctionList([
+                    classVar.getExactAssertion("this", thisAssertion.proto),
+                    regularPostCondition,
+                ]);
+            }
+            throw new Error("This assertion was not JSObject for constructor post");
+        };
     }
 }
