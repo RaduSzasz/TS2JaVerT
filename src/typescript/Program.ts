@@ -373,7 +373,11 @@ export class Program {
                 ForbiddenPredicate.toPredicate(),
                 ...map(this.indexSignatures, (i) => i.getPredicate()),
                 ...map(this.interfaces, (i) => i.toPredicate()),
-                ...flatMap(this.classes, (cls) => [cls.getInstancePredicate(), cls.getProtoPredicate()]),
+                ...flatMap(this.classes, (cls) => [
+                    cls.getInstancePredicate(),
+                    cls.getProtoPredicate(),
+                    cls.getConstructorPredicate(),
+                ]),
             ].join("\n");
             const commentedNode = ts.addSyntheticLeadingComment(
                 ts.createNotEmittedStatement(src.getFirstToken()),

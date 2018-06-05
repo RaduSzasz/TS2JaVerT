@@ -158,6 +158,22 @@ export class Class {
             ${predAssertion.disjuncts.map((def) => def.toString()).join(",\n")};`;
     }
 
+    public getConstructorPredicate(): string {
+        if (!this.constr) {
+            throw new Error(`Cannot generate constructor predicate for class ${this.name}!
+            No constructor identified!`);
+        }
+        const constr = "constr";
+        const proto = "proto";
+        return `
+        @pred ${this.getConstructorPredicateName()}(+${constr}, ${proto}):
+            JSFunctionObjectStrong(${constr}, "${this.constr.id}", {{ $lg, _ }}, _, ${proto});`;
+    }
+
+    public getConstructorPredicateName() {
+        return `${this.name}Constructor`;
+    }
+
     public getInstancePredicateName(): string {
         return this.name;
     }
