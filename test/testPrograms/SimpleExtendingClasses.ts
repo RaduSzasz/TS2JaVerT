@@ -14,8 +14,8 @@ class Cat extends Animal {
         super(position);
         this.name = name;
     }
-    public meow(): void {
-        console.log("Meow!! I’m " + this.name + "!");
+    public meow(): string {
+        return "Meow!! I’m " + this.name + "!";
     }
 }
 
