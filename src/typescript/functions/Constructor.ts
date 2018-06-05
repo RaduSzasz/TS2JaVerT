@@ -1,6 +1,6 @@
+import { Disjunction } from "../../assertions/Disjunction";
 import { EMPTY_SET, EmptyFields } from "../../assertions/EmptyFields";
 import { FunctionSpec } from "../../assertions/FunctionSpec";
-import { InSetAssertion } from "../../assertions/InSetAssertion";
 import { JSObject } from "../../assertions/JSObject";
 import { SeparatingConjunctionList } from "../../assertions/SeparatingConjunctionList";
 import { Class } from "../Class";
@@ -38,9 +38,10 @@ export class Constructor extends Function {
         this.classVar = classVar;
 
         return new SeparatingConjunctionList([
-            new JSObject("this", "#thisproto"),
+            new Disjunction(classVar.getDescendantProtosSet().map(
+                    (proto) => new JSObject("this", proto),
+                )),
             new EmptyFields("this", EMPTY_SET),
-            new InSetAssertion("#thisproto", classVar.getDescendantProtosSet()),
             regularFunctionPre,
         ]);
     }

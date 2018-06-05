@@ -1,12 +1,12 @@
-import { chain, find, flatMap, isEqual, map } from "lodash";
+import { find, flatMap, isEqual, map } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../assertions/Assertion";
 import { CustomPredicate } from "../assertions/CustomPredicate";
 import { DataProp } from "../assertions/DataProp";
 import { Disjunction } from "../assertions/Disjunction";
+import { EmptyFields } from "../assertions/EmptyFields";
 import { printFunctionSpec } from "../assertions/FunctionSpec";
 import { JSObject } from "../assertions/JSObject";
-import { NoneAssertion } from "../assertions/NoneAssertion";
 import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";
 import { Function } from "./functions/Function";
 import { Program } from "./Program";
@@ -125,11 +125,10 @@ export class Class {
     public getProtoPredicate(): string {
         const currProto = "proto";
         const parentProto = "parentProto";
-        const fPlus = this.determineFPlus();
         const predDef = `${this.getProtoPredicateName()}(+${currProto}, ${parentProto})`;
         const predicate = new SeparatingConjunctionList([
             new JSObject(currProto, parentProto),
-            ...fPlus.map((field) => new NoneAssertion(currProto, field)),
+            new EmptyFields(currProto, this.methods.map((method) => method.getName())),
             ...this.methods.map((method) => new SeparatingConjunctionList([
                 new DataProp(currProto, method.getName(), Variable.logicalVariableFromVariable(method)),
                 Function.logicalVariableFromFunction(method).toAssertion(),
@@ -143,10 +142,9 @@ export class Class {
     public getInstancePredicate(): string {
         const o = "o";
         const proto = "proto";
-        const nPlus = this.determineNPlus();
         const predAssertion: Disjunction = new SeparatingConjunctionList([
             new JSObject(o, proto),
-            ...nPlus.map((namedMethod: string) => new NoneAssertion(o, namedMethod)),
+            new EmptyFields(o, this.properties.map((prop) => prop.name)),
             ...this.properties.map((prop) => {
                 const logicalVar = Variable.logicalVariableFromVariable(prop);
                 return new SeparatingConjunctionList([
@@ -236,21 +234,5 @@ export class Class {
             return didUpdate;
         }
         return false;
-    }
-
-    private determineNPlus(): string[] {
-        return chain([this, ...this.ancestors])
-            .flatMap((cls) => cls.methods)
-            .map((method) => method.name)
-            .uniq()
-            .value();
-    }
-
-    private determineFPlus(): string[] {
-        return chain([this, ...this.descendants])
-            .flatMap((cls) => cls.properties)
-            .map((property) => property.name)
-            .uniq()
-            .value();
     }
 }
