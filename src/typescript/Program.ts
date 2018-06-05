@@ -32,7 +32,7 @@ export class Program {
     private indexSigCnt = 0;
     private readonly gamma: Variable[];
 
-    constructor(fileName: string, options?: ts.CompilerOptions) {
+    constructor(fileName: string, private omittedParams: Map<string, string[]>, options?: ts.CompilerOptions) {
         this.program = ts.createProgram([fileName], options || {});
         const emitResult = this.program.emit();
         const allDiagnostics = ts.getPreEmitDiagnostics(this.program).concat(emitResult.diagnostics);
@@ -292,7 +292,7 @@ export class Program {
         const functionCommentedNode = funcVar
             ? ts.addSyntheticLeadingComment(annotatedNode,
                 ts.SyntaxKind.MultiLineCommentTrivia,
-                printFunctionSpec(funcVar.generateAssertion()),
+                printFunctionSpec(funcVar.generateAssertion(this.omittedParams.get(funcVar.id))),
                 true)
             : annotatedNode;
 
@@ -332,7 +332,7 @@ export class Program {
                     ),
                 ),
                 ts.SyntaxKind.MultiLineCommentTrivia,
-                printFunctionSpec(funcVar.generateAssertion()),
+                printFunctionSpec(funcVar.generateAssertion(this.omittedParams.get(funcVar.id))),
                 true,
             );
         } else if (ts.isPropertyDeclaration(member) && funcVar) {
@@ -346,7 +346,7 @@ export class Program {
                     ts.visitNode(member.initializer, this.addFunctionSpecVisitor),
                 ),
                 ts.SyntaxKind.MultiLineCommentTrivia,
-                printFunctionSpec(funcVar.generateAssertion()),
+                printFunctionSpec(funcVar.generateAssertion(this.omittedParams.get(funcVar.id))),
                 true,
             );
         } else if (ts.isConstructorDeclaration(member)) {

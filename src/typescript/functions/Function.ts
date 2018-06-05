@@ -57,9 +57,9 @@ export class Function extends Variable {
         this.capturedVars = capturedVars;
     }
 
-    public generateAssertion(): FunctionSpec {
+    public generateAssertion(omittedParams: string[] = []): FunctionSpec {
         const pre = this.generatePreCondition();
-        const post = this.generatePostCondition();
+        const post = this.generatePostCondition(omittedParams);
 
         return {
             id: this.id,
@@ -97,28 +97,30 @@ export class Function extends Variable {
         ]));
     }
 
-    protected generatePostCondition(): (thisAssertion: Assertion | undefined) => SeparatingConjunctionList {
-        if (!this.capturedVars) {
+    protected generatePostCondition(omittedParams: string[] = []) {
+        const { capturedVars, classVar, params, program, returnType } = this;
+        if (!capturedVars) {
             throw new Error("Can not generate post-condition before determining captured vars");
         }
-        const protoAssertion = this.program.getPrototypeAssertion();
-        const paramAssertions: Assertion[]
-            = this.params
-                .map((param) => Variable.logicalVariableFromVariable(param).toAssertion());
+        const protoAssertion = program.getPrototypeAssertion();
         const capturedVariableAssertions: Assertion[]
-            = this.capturedVars
+            = capturedVars
                 .map((capturedVar) => capturedVar.toAssertionExtractingScope());
-        const ret = Variable.newReturnVariable(this.returnType);
+        const paramAssertions: Assertion[]
+            = params
+                .filter((param) => omittedParams.indexOf(param.name) === -1)
+                .map((param) => Variable.logicalVariableFromVariable(param).toAssertion());
+        const ret = Variable.newReturnVariable(returnType);
         return (thisAssertion: Assertion | undefined) => {
-            if ((thisAssertion && !this.classVar) || (this.classVar && !thisAssertion)) {
+            if ((thisAssertion && !classVar) || (classVar && !thisAssertion)) {
                 throw new Error("Class variable and this assertion must both be either falsey or truthy");
             }
             return new SeparatingConjunctionList(compact([
                 protoAssertion,
-                thisAssertion,
+                omittedParams.indexOf("this") === -1 && thisAssertion,
                 ...paramAssertions,
                 ...capturedVariableAssertions,
-                ret.toAssertion(),
+                omittedParams.indexOf("ret") === -1 && ret.toAssertion(),
             ]));
         };
     }
