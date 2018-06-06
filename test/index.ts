@@ -10,7 +10,7 @@ describe("A suite for checking if we find identifiers in expressions", () => {
     it("should find identifier in return statement", () => {
         const sourceFileName = "test/testPrograms/IdentifierInReturn.ts";
 
-        const program = new Program(sourceFileName);
+        const program = new Program(sourceFileName, new Map());
         expect(program).toBeTruthy();
 
         const functions = program.getFunctions();
@@ -28,7 +28,7 @@ describe("A suite for checking if we find identifiers in expressions", () => {
     it("should not consider params as captured vars", () => {
         const sourceFileName = "test/testPrograms/NestedFuncWithCapturedParams.ts";
 
-        const program = new Program(sourceFileName);
+        const program = new Program(sourceFileName, new Map());
         expect(program).toBeTruthy();
         const functions = program.getFunctions();
         expect(functions.length).toBe(2);
