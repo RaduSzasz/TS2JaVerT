@@ -1,5 +1,4 @@
 import { compact } from "lodash";
-import * as uuid from "uuid";
 import { Assertion } from "../../assertions/Assertion";
 import { FunctionObject } from "../../assertions/FunctionObject";
 import { FunctionSpec } from "../../assertions/FunctionSpec";
@@ -17,8 +16,7 @@ export class Function extends Variable {
             func.params,
             `#${func.name}`,
             scopeChain,
-            func.classVar,
-            func.id);
+            func.classVar);
     }
 
     public readonly id: string;
@@ -30,13 +28,11 @@ export class Function extends Variable {
                 name: string,
                 private scopeChain?: string,
                 protected classVar?: Class,
-                id?: string,
     ) {
         super(name, typeFromParamAndReturnType(params, returnType));
-        this.id = id ||
-            (this.classVar
+        this.id = (this.classVar
                 ? `${this.classVar.getName()}_${this.name}`
-                : uuid.v4());
+                : name);
     }
 
     public isFunction(): this is Function {
