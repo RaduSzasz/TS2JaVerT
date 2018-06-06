@@ -16,7 +16,8 @@ export class Function extends Variable {
             func.params,
             `#${func.name}`,
             scopeChain,
-            func.classVar);
+            func.classVar,
+            func.id);
     }
 
     public readonly id: string;
@@ -28,9 +29,11 @@ export class Function extends Variable {
                 name: string,
                 private scopeChain?: string,
                 protected classVar?: Class,
+                id?: string,
     ) {
         super(name, typeFromParamAndReturnType(params, returnType));
-        this.id = (this.classVar
+        this.id = id ||
+            (this.classVar
                 ? `${this.classVar.getName()}_${this.name}`
                 : name);
     }
