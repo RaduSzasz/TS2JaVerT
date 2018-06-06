@@ -20,18 +20,18 @@ export class IndexSignaturePredicate {
         const otherFields = "#fields'";
         const logicalVar = new Variable("#v", this.type);
 
-        const def1 = new HardcodedStringAssertion(`${allFields} == []`);
+        const def1 = new HardcodedStringAssertion(`(${allFields} == -{ }-)`);
 
         const def2 = new SeparatingConjunctionList([
-            new HardcodedStringAssertion(`${allFields} == ${fieldName} :: ${otherFields}`),
+            new HardcodedStringAssertion(`(${allFields} == -u- (-{ ${fieldName} -}, ${otherFields}))`),
             new DataProp(o, fieldName, logicalVar, true),
             logicalVar.toAssertion(),
             new CustomPredicate(this.name, `${o}, ${otherFields}`),
         ]);
         return `
-        ${this.name}(${o}, ${allFields}) =
-            [base] ${def1.toString()}
-            [rec] ${def2.toString()}
+        @pred ${this.name}(${o}, ${allFields}):
+            [base] ${def1.toString()},
+            [rec] ${def2.toString()};
 `;
     }
 }
