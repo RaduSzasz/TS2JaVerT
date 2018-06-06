@@ -1,7 +1,9 @@
 import { flatMap, flatten, isEqual, map, uniqWith } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../assertions/Assertion";
+import { FunctionPrototype } from "../assertions/FunctionPrototype";
 import { printFunctionSpec } from "../assertions/FunctionSpec";
+import { GlobalObject } from "../assertions/GlobalObject";
 import { ObjectPrototype } from "../assertions/ObjectPrototype";
 import { ForbiddenPredicate } from "../assertions/predicates/ForbiddenPredicate";
 import { IndexSignaturePredicate } from "../assertions/predicates/IndexSignaturePredicate";
@@ -97,10 +99,12 @@ export class Program {
         return indexSignature;
     }
 
-    public getPrototypeAssertion(): Assertion {
+    public getAllProtosAndConstructorsAssertion(scopeChain: string = ""): Assertion {
         return new SeparatingConjunctionList([
-            ...map(this.classes, (cls) => cls.getProtoAssertion()),
+            ...map(this.classes, (cls) => cls.getProtoAndConstructorAssertion(scopeChain)),
             new ObjectPrototype(),
+            new FunctionPrototype(),
+            new GlobalObject(),
         ]);
     }
 
@@ -377,6 +381,7 @@ export class Program {
                     cls.getInstancePredicate(),
                     cls.getProtoPredicate(),
                     cls.getConstructorPredicate(),
+                    cls.getProtoAndConstructorPredicate(),
                 ]),
             ].join("\n");
             const commentedNode = ts.addSyntheticLeadingComment(

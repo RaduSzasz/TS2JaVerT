@@ -10,12 +10,13 @@ import { Type, typeFromParamAndReturnType } from "../Types";
 import { Variable } from "../Variable";
 
 export class Function extends Variable {
-    public static logicalVariableFromFunction(func: Function): Function {
+    public static logicalVariableFromFunction(func: Function, scopeChain?: string): Function {
         return new Function(
             func.program,
             func.returnType,
             func.params,
             `#${func.name}`,
+            scopeChain,
             func.classVar,
             func.id);
     }
@@ -27,6 +28,7 @@ export class Function extends Variable {
                 private returnType: Type,
                 private params: Variable[],
                 name: string,
+                private scopeChain?: string,
                 protected classVar?: Class,
                 id?: string,
     ) {
@@ -72,6 +74,7 @@ export class Function extends Variable {
         return new FunctionObject(
             this.name,
             this.classVar ? this.id : undefined,
+            this.scopeChain,
         );
     }
 
@@ -79,11 +82,13 @@ export class Function extends Variable {
         return this.capturedVars && [...this.capturedVars];
     }
 
-    protected generatePreCondition(): SeparatingConjunctionList {
+    protected generatePreCondition(scopeChain: string = ""): SeparatingConjunctionList {
         if (!this.capturedVars) {
             throw new Error("Can not generate pre-condition before determining captured vars");
         }
-        const protoAssertion = this.program.getPrototypeAssertion();
+
+        scopeChain = scopeChain || (this.classVar ? "$$scope" : "");
+        const protoAssertion = this.program.getAllProtosAndConstructorsAssertion(scopeChain);
         const paramAssertions: Assertion[] = this.params.map((param) => param.toAssertion());
         const capturedVariableAssertions: Assertion[]
             = this.capturedVars
@@ -97,12 +102,13 @@ export class Function extends Variable {
         ]));
     }
 
-    protected generatePostCondition(omittedParams: string[] = []) {
+    protected generatePostCondition(omittedParams: string[] = [], scopeChain: string = "") {
         const { capturedVars, classVar, params, program, returnType } = this;
         if (!capturedVars) {
             throw new Error("Can not generate post-condition before determining captured vars");
         }
-        const protoAssertion = program.getPrototypeAssertion();
+        scopeChain = scopeChain || (this.classVar ? "$$scope" : "");
+        const protoAssertion = program.getAllProtosAndConstructorsAssertion(scopeChain);
         const capturedVariableAssertions: Assertion[]
             = capturedVars
                 .map((capturedVar) => capturedVar.toAssertionExtractingScope());

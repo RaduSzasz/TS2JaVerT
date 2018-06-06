@@ -104,7 +104,7 @@ function createFunctionInstance(
             name,
             classVar);
     }
-    return new Function(program, returnType, params, name, classVar);
+    return new Function(program, returnType, params, name, undefined, classVar);
 }
 
 function getFunctionName(

@@ -23,7 +23,7 @@ const args = yargs
     .argv;
 
 const omittedParams: Map<string, string[]> = new Map();
-args.omit.forEach(({ id, param }: { id: string, param: string }) => {
+(args.omit || []).forEach(({ id, param }: { id: string, param: string }) => {
     omittedParams.set(id, (omittedParams.get(id) || []).concat(param));
 });
 const program = new Program(args.input, omittedParams);

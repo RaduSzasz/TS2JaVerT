@@ -17,7 +17,7 @@ export class Constructor extends Function {
                 name: string,
                 classVar: Class,
     ) {
-        super(program, returnType, params, name, classVar);
+        super(program, returnType, params, name, undefined, classVar);
     }
 
     public generateAssertion(): FunctionSpec {
@@ -35,7 +35,7 @@ export class Constructor extends Function {
             throw new Error("Constructors must have associated class variable. Something went wrong!");
         }
         this.classVar = undefined;
-        const regularFunctionPre = super.generatePreCondition();
+        const regularFunctionPre = super.generatePreCondition("$$scope");
         this.classVar = classVar;
 
         return new SeparatingConjunctionList([
@@ -53,7 +53,7 @@ export class Constructor extends Function {
             throw new Error("Constructors must have associated class variable. Something went wrong!");
         }
         this.classVar = undefined;
-        const regularPostCondition = this.generatePostCondition()(undefined);
+        const regularPostCondition = this.generatePostCondition([], "$$scope")(undefined);
         this.classVar = classVar;
 
         return (thisAssertion: Assertion | undefined) => {

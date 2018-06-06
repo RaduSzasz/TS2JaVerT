@@ -133,6 +133,8 @@ export function typeFromTSType(tsTypeNode: ts.TypeNode, program: Program): Type 
         return { typeFlag: TypeFlags.Undefined };
     } else if (tsType.flags & ts.TypeFlags.Null) {
         return { typeFlag: TypeFlags.Null };
+    } else if (tsType.flags & ts.TypeFlags.Any) {
+        return { typeFlag: TypeFlags.Any };
     } else if (tsType.flags & ts.TypeFlags.StringLiteral) {
         return {
             str: (tsType as ts.StringLiteralType).value,

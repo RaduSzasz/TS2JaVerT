@@ -6,6 +6,7 @@ import { DataProp } from "../assertions/DataProp";
 import { Disjunction } from "../assertions/Disjunction";
 import { EmptyFields } from "../assertions/EmptyFields";
 import { printFunctionSpec } from "../assertions/FunctionSpec";
+import { HardcodedStringAssertion } from "../assertions/HardcodedStringAssertion";
 import { JSObject } from "../assertions/JSObject";
 import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";
 import { Function } from "./functions/Function";
@@ -125,13 +126,14 @@ export class Class {
     public getProtoPredicate(): string {
         const currProto = "proto";
         const parentProto = "parentProto";
-        const predDef = `${this.getProtoPredicateName()}(+${currProto}, ${parentProto})`;
+        const scopeChain = "sch";
+        const predDef = `${this.getProtoPredicateName()}(+${currProto}, ${parentProto}, ${scopeChain})`;
         const predicate = new SeparatingConjunctionList([
             new JSObject(currProto, parentProto),
             new EmptyFields(currProto, this.methods.map((method) => method.getName())),
             ...this.methods.map((method) => new SeparatingConjunctionList([
                 new DataProp(currProto, method.getName(), Variable.logicalVariableFromVariable(method)),
-                Function.logicalVariableFromFunction(method).toAssertion(),
+                Function.logicalVariableFromFunction(method, scopeChain).toAssertion(),
             ])),
         ]);
         return `
@@ -165,9 +167,41 @@ export class Class {
         }
         const constr = "constr";
         const proto = "proto";
+        const scopeChain = "sch";
         return `
-        @pred ${this.getConstructorPredicateName()}(+${constr}, ${proto}):
-            JSFunctionObjectStrong(${constr}, "${this.constr.id}", {{ $lg, _ }}, _, ${proto});`;
+        @pred ${this.getConstructorPredicateName()}(+${constr}, ${proto}, ${scopeChain}):
+            JSFunctionObjectStrong(${constr}, "${this.constr.id}", ${scopeChain}, _, ${proto});`;
+    }
+
+    public getProtoAndConstructorPredicate(): string {
+        if (!this.constr) {
+            throw new Error(`Cannot generate full predicate for class ${this.name}!
+            No constructor identified!`);
+        }
+
+        const currProto = "proto";
+        const parentProto = "parentProto";
+        const scopeChain = "sch";
+
+        return `
+        @pred ${this.getProtoAndConstructorPredicateName()}(+${currProto}, ${parentProto}, ${scopeChain}):
+            sc_scope(${this.constr.id}, ${this.name} : #${this.name}, ${scopeChain}) *
+            ${this.getConstructorPredicateName()}(#${this.name}, ${currProto}, ${scopeChain}) *
+            ${this.getProtoPredicateName()}(${currProto}, ${parentProto}, ${scopeChain});`;
+    }
+
+    public getProtoAndConstructorAssertion(scopeChain: string = ""): Assertion {
+        const predName = this.getProtoAndConstructorPredicateName();
+        const protoParam = this.getProtoLogicalVariableName();
+        const parentProtoParam = this.inheritingFrom
+            ? this.inheritingFrom.getProtoLogicalVariableName()
+            : "$lobj_proto";
+        scopeChain = scopeChain || "_";
+        return new HardcodedStringAssertion(`${predName}(${protoParam}, ${parentProtoParam}, ${scopeChain})`);
+    }
+
+    public getProtoAndConstructorPredicateName(): string {
+        return `${this.name}ProtoAndConstructor`;
     }
 
     public getConstructorPredicateName() {
@@ -183,7 +217,7 @@ export class Class {
     }
 
     public getProtoLogicalVariableName(): string {
-        return `$l${this.name}proto`;
+        return `#${this.name}proto`;
     }
 
     public getAssertion(instanceName: string): Assertion {
