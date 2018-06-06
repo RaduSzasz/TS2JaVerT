@@ -6,14 +6,9 @@ interface Circle {
     radius: number;
 }
 
-function createShape(shape: "circle" | "square", sz: number): Square | Circle {
-    if (shape === "circle") {
+function createShape(s: "circle" | "square", sz: number): Square | Circle {
+    if (s === "circle") {
         return { radius: sz };
-    } else if (shape === "square") {
-        return { edgeSize: sz };
     }
+    return { edgeSize: sz };
 }
-
-var shape: Square | Circle = createShape("circle", 3);
-var square: Square = shape as Square;
-console.log(square.edgeSize);
