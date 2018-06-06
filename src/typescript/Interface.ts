@@ -23,12 +23,12 @@ export class Interface {
     public toPredicate(): string {
         const o = "o";
         return `
-        ${this.name}(${o}) :
+        @pred ${this.name}(${o}):
             ${this.objectLiteral
             .toAssertion(o)
             .toDisjunctiveNormalForm().disjuncts
             .map((def) => def.toString())
-            .join(",\n")}
+            .join(",\n")};
 `;
     }
 

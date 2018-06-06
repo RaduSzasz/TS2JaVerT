@@ -59,7 +59,7 @@ export function typeToAssertion(name: string, type: Type): Assertion {
     if (isPrimitiveType(type)) {
         return new TypesPredicate(name, type.typeFlag);
     } else if (isStringLiteralType(type)) {
-        return new HardcodedStringAssertion(`${name} === "${type.str}"`);
+        return new HardcodedStringAssertion(`(${name} == "${type.str}")`);
     } else if (isAnyType(type)) {
         return new Emp();
     } else if (isInterfaceType(type)) {
@@ -71,7 +71,7 @@ export function typeToAssertion(name: string, type: Type): Assertion {
     } else if (isUnionType(type)) {
         return new Disjunction(type.types.map((t) => typeToAssertion(name, t)));
     } else if (isThisType(type)) {
-        return new HardcodedStringAssertion(`(${name} === this)`);
+        return new HardcodedStringAssertion(`(${name} == this)`);
     }
     throw new Error(`Cannot convert type ${type.typeFlag} to assertion`);
 }

@@ -1,5 +1,4 @@
 import * as ts from "typescript";
-import * as uuid from "uuid";
 import { Assertion, typeToAssertion } from "../assertions/Assertion";
 import { Emp } from "../assertions/Emp";
 import { FunctionObject } from "../assertions/FunctionObject";
@@ -44,9 +43,9 @@ export class Variable {
     }
 
     public static protoLogicalVariable(t?: Class) {
-        const name = (t && t.name) || uuid.v4();
+        const name = (t && `#${t.name}proto`) || "_";
         // Not sure if Void is the best way to go here.
-        return new Variable(`#${name}proto`, { typeFlag: TypeFlags.Void });
+        return new Variable(name, { typeFlag: TypeFlags.Void });
     }
 
     public static nameMatcher(name: string) {
