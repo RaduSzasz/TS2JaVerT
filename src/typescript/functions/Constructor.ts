@@ -1,3 +1,4 @@
+import { compact } from "lodash";
 import { Assertion, isJSObject } from "../../assertions/Assertion";
 import { Disjunction } from "../../assertions/Disjunction";
 import { EMPTY_SET, EmptyFields } from "../../assertions/EmptyFields";
@@ -35,7 +36,6 @@ export class Constructor extends Function {
             throw new Error("Constructors must have associated class variable. Something went wrong!");
         }
         const regularFunctionPre = super.generatePreCondition({
-            includeProtoConstructorAssertions: !classVar.doesClassInherit(),
             includeThisAssertion: false,
         });
 
@@ -54,16 +54,15 @@ export class Constructor extends Function {
             throw new Error("Constructors must have associated class variable. Something went wrong!");
         }
         const regularPostCondition = this.generatePostCondition({
-            includeProtoConstructorAssertions: !classVar.doesClassInherit(),
             includeThisAssertion: false,
         })(undefined);
 
         return (thisAssertion: Assertion | undefined) => {
             if (thisAssertion && isJSObject(thisAssertion)) {
-                return new SeparatingConjunctionList([
+                return new SeparatingConjunctionList(compact([
                     classVar.getExactAssertion("this", thisAssertion.proto),
                     regularPostCondition,
-                ]);
+                ]));
             }
             throw new Error("This assertion was not JSObject for constructor post");
         };

@@ -8,6 +8,7 @@ import { EmptyFields } from "../assertions/EmptyFields";
 import { printFunctionSpec } from "../assertions/FunctionSpec";
 import { HardcodedStringAssertion } from "../assertions/HardcodedStringAssertion";
 import { JSObject } from "../assertions/JSObject";
+import { ScopeAssertion } from "../assertions/ScopeAssertion";
 import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";
 import { Function } from "./functions/Function";
 import { Program } from "./Program";
@@ -190,13 +191,35 @@ export class Class {
             ${this.getProtoPredicateName()}(${currProto}, ${parentProto}, ${scopeChain});`;
     }
 
-    public getProtoAndConstructorAssertion(scopeChain: string = "_"): Assertion {
+    public getAlternativeProtoAndConstructorPredicate(): string {
+        if (!this.constr) {
+            throw new Error(`Cannot generate full predicate for class ${this.name}!
+            No constructor identified!`);
+        }
+        const constr = "constr";
+        const currProto = "#proto";
+        const parentProto = "#pproto";
+        const scopeChain = "#sch";
+        return `
+        @pred ${this.getAlternativeProtoAndConstructorPredicateName()}(${constr}):
+            ${this.getConstructorPredicateName()}(${constr}, ${currProto}, ${scopeChain}) *
+            ${this.getProtoPredicateName()}(${currProto}, ${parentProto}, ${scopeChain}) *
+            sc_scope(${this.constr.id}, ${this.name} : ${constr}, ${scopeChain});
+        `;
+    }
+
+    public getProtoAndConstructorAssertion(forItself: boolean): Assertion {
         const predName = this.getProtoAndConstructorPredicateName();
         const protoParam = this.getProtoLogicalVariableName();
         const parentProtoParam = this.inheritingFrom
             ? this.inheritingFrom.getProtoLogicalVariableName()
             : "$lobj_proto";
+        const scopeChain = forItself ? "$$scope" : "_";
         return new HardcodedStringAssertion(`${predName}(${protoParam}, ${parentProtoParam}, ${scopeChain})`);
+    }
+
+    public getAlternativeProtoAndConstructorPredicateName(): string {
+        return `Alternative${this.name}ProtoAndConstructor`;
     }
 
     public getProtoAndConstructorPredicateName(): string {
@@ -223,6 +246,16 @@ export class Class {
         return new Disjunction(this.descendants.map((descendant) =>
             descendant.getExactAssertion(instanceName),
         ));
+    }
+
+    public getAlternativeProtoAndConstructorAssertion(): Assertion {
+        const predName = this.getAlternativeProtoAndConstructorPredicateName();
+        const s = "_super";
+
+        return new SeparatingConjunctionList([
+            new ScopeAssertion(s, "#s"),
+            new CustomPredicate(predName, "#s"),
+        ]);
     }
 
     public getExactAssertion(instanceName: string, protoLogicalVariable?: string): Assertion {
@@ -255,6 +288,10 @@ export class Class {
         return printFunctionSpec(this.constr.generateAssertion());
     }
 
+    public getParent(): Class | undefined {
+        return this.inheritingFrom;
+    }
+
     public setConstructor(constr: Function): void {
         if (this.constr) {
             throw new Error("Can not set constructor. Class has already set it once.");
@@ -265,6 +302,10 @@ export class Class {
 
     public getDescendantProtosSet(): string[] {
         return this.descendants.map((d) => d.getProtoLogicalVariableName());
+    }
+
+    public isParentOf(c: Class): boolean {
+        return c.inheritingFrom === this;
     }
 
     private updateAncestorsAndDescendants(): boolean {

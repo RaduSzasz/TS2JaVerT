@@ -1,4 +1,4 @@
-import { flatMap, flatten, isEqual, map, partition, uniqWith } from "lodash";
+import { compact, filter, flatMap, flatten, isEqual, map, uniqWith } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../assertions/Assertion";
 import { FunctionPrototype } from "../assertions/FunctionPrototype";
@@ -100,14 +100,17 @@ export class Program {
     }
 
     public getAllProtosAndConstructorsAssertion(classVar: Class | undefined): Assertion {
-        const [myClass, otherClasses] = partition(this.classes, (cls: Class) => cls === classVar);
-        return new SeparatingConjunctionList([
-            ...map(myClass, (cls: Class) => cls.getProtoAndConstructorAssertion("$$scope")),
-            ...map(otherClasses, (cls: Class) => cls.getProtoAndConstructorAssertion()),
+        const otherClasses = classVar &&
+            filter(this.classes, (cls) => cls !== classVar && !cls.isParentOf(classVar));
+        const parent = classVar && classVar.getParent();
+        return new SeparatingConjunctionList(compact([
+            classVar && classVar.getProtoAndConstructorAssertion(true),
+            parent && parent.getAlternativeProtoAndConstructorAssertion(),
+            ...map(otherClasses, (cls: Class) => cls.getProtoAndConstructorAssertion(false)),
             new ObjectPrototype(),
             new FunctionPrototype(),
             new GlobalObject(),
-        ]);
+        ]));
     }
 
     public getFunction(node: ts.Node): Function | undefined {
