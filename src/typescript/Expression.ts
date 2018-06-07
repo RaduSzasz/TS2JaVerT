@@ -106,6 +106,7 @@ export function visitExpressionForCapturedVars(
 
 export function visitExpressionToFindAssignments(
     node: ts.Node | undefined,
+    params: Variable[],
     outerScope: Variable[],
     currentScope: Variable[],
     program: Program,
@@ -120,7 +121,7 @@ export function visitExpressionToFindAssignments(
     }
 
     const visitExpression = (n: ts.Node | undefined) =>
-        visitExpressionToFindAssignments(n, outerScope, currentScope, program, func);
+        visitExpressionToFindAssignments(n, params, outerScope, currentScope, program, func);
 
     if (!node ||
         ts.isStringLiteral(node) ||
@@ -173,7 +174,7 @@ export function visitExpressionToFindAssignments(
                 : undefined);
 
         if (obj && ts.isIdentifier(obj)) {
-            const assignedVar = getAssignedVariable(obj.text, outerScope, currentScope);
+            const assignedVar = getAssignedVariable(obj.text, params, [...currentScope, ...outerScope]);
             if (!assignedVar) {
                 throw new Error(`Cannot find ${obj.text} in scope`);
             }
@@ -194,6 +195,7 @@ export function visitExpressionToFindAssignments(
         visitStatementToFindAssignments(
             node.body,
             program,
+            func.getParams(),
             [...currentScope, ...outerScope],
             funcScope,
         );
@@ -204,19 +206,20 @@ export function visitExpressionToFindAssignments(
 
 function getAssignedVariable(
     varName: string,
-    outerScope: Variable[],
-    currentScope: Variable[]): AssignedVariable | undefined {
+    params: Variable[],
+    scope: Variable[]): AssignedVariable | undefined {
 
-    const currentScopeVar = find(currentScope, Variable.nameMatcher(varName));
-    if (currentScopeVar) {
+    const paramVar = find(params, Variable.nameMatcher(varName));
+    if (paramVar) {
         return {
-            assignedVar: currentScopeVar,
-            currentScope: true,
+            assignedVar: paramVar,
+            parameter: true,
         };
     }
-    const outerScopeVar = find(outerScope, Variable.nameMatcher(varName));
-    return outerScopeVar && {
-        assignedVar: outerScopeVar,
-        currentScope: false,
+
+    const scopeVar = find(scope, Variable.nameMatcher(varName));
+    return scopeVar && {
+        assignedVar: scopeVar,
+        parameter: false,
     };
 }

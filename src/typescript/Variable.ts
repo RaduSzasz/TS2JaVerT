@@ -12,7 +12,7 @@ import { createOptionalType, isAnyType, Type, TypeFlags, typeFromTSType } from "
 
 export interface AssignedVariable {
     assignedVar: Variable;
-    currentScope: boolean;
+    parameter: boolean;
 }
 
 export class Variable {

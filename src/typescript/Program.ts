@@ -203,6 +203,7 @@ export class Program {
                 statement,
                 this,
                 [],
+                [],
                 this.gamma));
     }
     private determineCapturedVars(): void {
@@ -311,8 +312,8 @@ export class Program {
             ? ts.addSyntheticTrailingComment(functionCommentedNode,
                 ts.SyntaxKind.MultiLineCommentTrivia,
                 `@tactic assert(${new SeparatingConjunctionList(
-                    assignedVars.map(({ assignedVar, currentScope }) =>
-                        currentScope ? assignedVar.toAssertion() : assignedVar.toAssertionExtractingScope()),
+                    assignedVars.map(({ assignedVar, parameter }) =>
+                        parameter ? assignedVar.toAssertion() : assignedVar.toAssertionExtractingScope()),
                 ).toDisjunctiveNormalForm().disjuncts
                     .map((disjunct) => disjunct.toString()).join(",\n")})`,
                 true)

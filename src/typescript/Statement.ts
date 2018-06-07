@@ -35,7 +35,7 @@ export function visitStatementToFindDeclaredVars(
 
                 program.addAssignments(node.parent.parent, [{
                     assignedVar: declaredVar,
-                    currentScope: true,
+                    parameter: false,
                 }]);
             } else {
                 throw new Error("Variable declaration was not child of variable statement. Something went wrong");
@@ -126,12 +126,13 @@ export function visitStatementToFindCapturedVars(
 export function visitStatementToFindAssignments(
     node: ts.Node | undefined,
     program: Program,
+    params: Variable[],
     outerScope: Variable[],
     currentScope: Variable[]): void {
 
     const checker = program.getTypeChecker();
     const visitStatement = (n: ts.Node | undefined) =>
-        visitStatementToFindAssignments(n, program, outerScope, currentScope);
+        visitStatementToFindAssignments(n, program, params, outerScope, currentScope);
 
     if (!node || ts.isInterfaceDeclaration(node)) {
         return;
@@ -148,6 +149,7 @@ export function visitStatementToFindAssignments(
                     node.parent.parent,
                     visitExpressionToFindAssignments(
                         node.initializer,
+                        params,
                         outerScope,
                         currentScope,
                         program,
@@ -173,6 +175,7 @@ export function visitStatementToFindAssignments(
         node.body!.statements.map((statement) => visitStatementToFindAssignments(
             statement,
             program,
+            funcVar.getParams(),
             [...currentScope, ...outerScope],
             funcScope,
         ));
@@ -194,6 +197,7 @@ export function visitStatementToFindAssignments(
                 declaration.body.statements.map((statement) => visitStatementToFindAssignments(
                     statement,
                     program,
+                    constrVar.getParams(),
                     classOuterScope,
                     constrScope,
                 ));
@@ -209,6 +213,7 @@ export function visitStatementToFindAssignments(
                 declaration.body.statements.map((statement) => visitStatementToFindAssignments(
                     statement,
                     program,
+                    methodVar.getParams(),
                     classOuterScope,
                     constrScope,
                 ));
@@ -223,13 +228,14 @@ export function visitStatementToFindAssignments(
                     throw new Error("Property has associated function variable but no initializer");
                 }
 
-                const constrScope = getFunctionScope(funcVar, program, declaration.initializer);
+                const funcScope = getFunctionScope(funcVar, program, declaration.initializer);
                 declaration.initializer.body.statements
                     .map((statement) => visitStatementToFindAssignments(
                         statement,
                         program,
+                        funcVar.getParams(),
                         classOuterScope,
-                        constrScope,
+                        funcScope,
                     ));
             },
         });
@@ -238,13 +244,14 @@ export function visitStatementToFindAssignments(
     } else if (ts.isReturnStatement(node)) {
         program.addAssignments(
             node,
-            visitExpressionToFindAssignments(node.expression, outerScope, currentScope, program),
+            visitExpressionToFindAssignments(node.expression, params, outerScope, currentScope, program),
         );
     } else if (ts.isExpressionStatement(node)) {
         program.addAssignments(
             node,
             visitExpressionToFindAssignments(
                 node.expression,
+                params,
                 outerScope,
                 currentScope,
                 program,
