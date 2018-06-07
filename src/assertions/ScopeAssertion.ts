@@ -7,6 +7,6 @@ export class ScopeAssertion extends AssertionObject {
     }
 
     public toString(): string {
-        return `Scope(${this.variable}, ${this.logicalVariable})`;
+        return `scope(${this.variable} : ${this.logicalVariable})`;
     }
 }
