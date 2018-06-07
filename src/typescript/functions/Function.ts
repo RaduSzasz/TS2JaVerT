@@ -1,4 +1,4 @@
-import { compact } from "lodash";
+import { compact, defaults } from "lodash";
 import { Assertion } from "../../assertions/Assertion";
 import { FunctionObject } from "../../assertions/FunctionObject";
 import { FunctionSpec } from "../../assertions/FunctionSpec";
@@ -7,6 +7,18 @@ import { Class } from "../Class";
 import { Program } from "../Program";
 import { Type, typeFromParamAndReturnType } from "../Types";
 import { Variable } from "../Variable";
+
+export interface SpecOptions {
+    includeProtoConstructorAssertions: boolean;
+    includeThisAssertion: boolean;
+    omittedParams: string[];
+}
+
+const DEFAULT_SPEC_OPTIONS: SpecOptions = {
+    includeProtoConstructorAssertions: true,
+    includeThisAssertion: true,
+    omittedParams: [],
+};
 
 export class Function extends Variable {
     public static logicalVariableFromFunction(func: Function, scopeChain?: string): Function {
@@ -58,9 +70,9 @@ export class Function extends Variable {
         this.capturedVars = capturedVars;
     }
 
-    public generateAssertion(omittedParams: string[] = []): FunctionSpec {
-        const pre = this.generatePreCondition();
-        const post = this.generatePostCondition(omittedParams);
+    public generateAssertion(options: Partial<SpecOptions> = DEFAULT_SPEC_OPTIONS): FunctionSpec {
+        const pre = this.generatePreCondition(options);
+        const post = this.generatePostCondition(options);
 
         return {
             id: this.id,
@@ -81,48 +93,63 @@ export class Function extends Variable {
         return this.capturedVars && [...this.capturedVars];
     }
 
-    protected generatePreCondition(scopeChain: string = ""): SeparatingConjunctionList {
+    protected generatePreCondition(options: Partial<SpecOptions> = DEFAULT_SPEC_OPTIONS): SeparatingConjunctionList {
         if (!this.capturedVars) {
             throw new Error("Can not generate pre-condition before determining captured vars");
         }
 
-        scopeChain = scopeChain || (this.classVar ? "$$scope" : "");
-        const protoAssertion = this.program.getAllProtosAndConstructorsAssertion(scopeChain);
+        options = defaults(options, DEFAULT_SPEC_OPTIONS);
+        const protoAssertion = options.includeProtoConstructorAssertions &&
+            this.program.getAllProtosAndConstructorsAssertion(this.classVar);
+
         const paramAssertions: Assertion[] = this.params.map((param) => param.toAssertion());
+
         const capturedVariableAssertions: Assertion[]
-            = this.capturedVars
-                .map((capturedVar) => capturedVar.toAssertionExtractingScope());
+            = this.capturedVars.map((capturedVar) => capturedVar.toAssertionExtractingScope());
+
+        const thisAssertion = this.classVar && options.includeThisAssertion &&
+            this.classVar.getAssertion("this");
 
         return new SeparatingConjunctionList(compact([
             protoAssertion,
-            (this.classVar ? this.classVar.getAssertion("this") : undefined),
+            thisAssertion,
             ...paramAssertions,
             ...capturedVariableAssertions,
         ]));
     }
 
-    protected generatePostCondition(omittedParams: string[] = [], scopeChain: string = "") {
+    protected generatePostCondition(options: Partial<SpecOptions> = DEFAULT_SPEC_OPTIONS) {
         const { capturedVars, classVar, params, program, returnType } = this;
+        const {
+            omittedParams,
+            includeProtoConstructorAssertions,
+            includeThisAssertion,
+        } = defaults(options, DEFAULT_SPEC_OPTIONS);
+
         if (!capturedVars) {
             throw new Error("Can not generate post-condition before determining captured vars");
         }
-        scopeChain = scopeChain || (this.classVar ? "$$scope" : "");
-        const protoAssertion = program.getAllProtosAndConstructorsAssertion(scopeChain);
+
+        const protoAssertion = includeProtoConstructorAssertions &&
+            program.getAllProtosAndConstructorsAssertion(this.classVar);
+
         const capturedVariableAssertions: Assertion[]
-            = capturedVars
-                .map((capturedVar) => capturedVar.toAssertionExtractingScope());
+            = capturedVars.map((capturedVar) => capturedVar.toAssertionExtractingScope());
+
         const paramAssertions: Assertion[]
             = params
                 .filter((param) => omittedParams.indexOf(param.name) === -1)
                 .map((param) => Variable.logicalVariableFromVariable(param).toAssertion());
+
         const ret = Variable.newReturnVariable(returnType);
+
         return (thisAssertion: Assertion | undefined) => {
-            if ((thisAssertion && !classVar) || (classVar && !thisAssertion)) {
+            if (includeThisAssertion && ((thisAssertion && !classVar) || (classVar && !thisAssertion))) {
                 throw new Error("Class variable and this assertion must both be either falsey or truthy");
             }
             return new SeparatingConjunctionList(compact([
                 protoAssertion,
-                omittedParams.indexOf("this") === -1 && thisAssertion,
+                omittedParams.indexOf("this") === -1 && includeThisAssertion && thisAssertion,
                 ...paramAssertions,
                 ...capturedVariableAssertions,
                 omittedParams.indexOf("ret") === -1 && ret.toAssertion(),

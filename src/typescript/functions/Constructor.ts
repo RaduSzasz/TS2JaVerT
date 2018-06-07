@@ -30,13 +30,14 @@ export class Constructor extends Function {
     }
 
     private generatePre(): SeparatingConjunctionList {
-        const classVar = this.classVar;
+        const { classVar } = this;
         if (!classVar) {
             throw new Error("Constructors must have associated class variable. Something went wrong!");
         }
-        this.classVar = undefined;
-        const regularFunctionPre = super.generatePreCondition("$$scope");
-        this.classVar = classVar;
+        const regularFunctionPre = super.generatePreCondition({
+            includeProtoConstructorAssertions: !classVar.doesClassInherit(),
+            includeThisAssertion: false,
+        });
 
         return new SeparatingConjunctionList([
             new Disjunction(classVar.getDescendantProtosSet().map(
@@ -48,13 +49,14 @@ export class Constructor extends Function {
     }
 
     private generatePost(): (thisAssertion: Assertion | undefined) => SeparatingConjunctionList {
-        const classVar = this.classVar;
+        const { classVar } = this;
         if (!classVar) {
             throw new Error("Constructors must have associated class variable. Something went wrong!");
         }
-        this.classVar = undefined;
-        const regularPostCondition = this.generatePostCondition([], "$$scope")(undefined);
-        this.classVar = classVar;
+        const regularPostCondition = this.generatePostCondition({
+            includeProtoConstructorAssertions: !classVar.doesClassInherit(),
+            includeThisAssertion: false,
+        })(undefined);
 
         return (thisAssertion: Assertion | undefined) => {
             if (thisAssertion && isJSObject(thisAssertion)) {

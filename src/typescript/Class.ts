@@ -190,13 +190,12 @@ export class Class {
             ${this.getProtoPredicateName()}(${currProto}, ${parentProto}, ${scopeChain});`;
     }
 
-    public getProtoAndConstructorAssertion(scopeChain: string = ""): Assertion {
+    public getProtoAndConstructorAssertion(scopeChain: string = "_"): Assertion {
         const predName = this.getProtoAndConstructorPredicateName();
         const protoParam = this.getProtoLogicalVariableName();
         const parentProtoParam = this.inheritingFrom
             ? this.inheritingFrom.getProtoLogicalVariableName()
             : "$lobj_proto";
-        scopeChain = scopeChain || "_";
         return new HardcodedStringAssertion(`${predName}(${protoParam}, ${parentProtoParam}, ${scopeChain})`);
     }
 

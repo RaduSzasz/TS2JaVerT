@@ -1,4 +1,4 @@
-import { flatMap, flatten, isEqual, map, uniqWith } from "lodash";
+import { flatMap, flatten, isEqual, map, partition, uniqWith } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../assertions/Assertion";
 import { FunctionPrototype } from "../assertions/FunctionPrototype";
@@ -99,9 +99,11 @@ export class Program {
         return indexSignature;
     }
 
-    public getAllProtosAndConstructorsAssertion(scopeChain: string = ""): Assertion {
+    public getAllProtosAndConstructorsAssertion(classVar: Class | undefined): Assertion {
+        const [myClass, otherClasses] = partition(this.classes, (cls: Class) => cls === classVar);
         return new SeparatingConjunctionList([
-            ...map(this.classes, (cls) => cls.getProtoAndConstructorAssertion(scopeChain)),
+            ...map(myClass, (cls: Class) => cls.getProtoAndConstructorAssertion("$$scope")),
+            ...map(otherClasses, (cls: Class) => cls.getProtoAndConstructorAssertion()),
             new ObjectPrototype(),
             new FunctionPrototype(),
             new GlobalObject(),
@@ -296,7 +298,9 @@ export class Program {
         const functionCommentedNode = funcVar
             ? ts.addSyntheticLeadingComment(annotatedNode,
                 ts.SyntaxKind.MultiLineCommentTrivia,
-                printFunctionSpec(funcVar.generateAssertion(this.omittedParams.get(funcVar.id))),
+                printFunctionSpec(funcVar.generateAssertion({
+                    omittedParams: this.omittedParams.get(funcVar.id),
+                })),
                 true)
             : annotatedNode;
 
@@ -336,7 +340,9 @@ export class Program {
                     ),
                 ),
                 ts.SyntaxKind.MultiLineCommentTrivia,
-                printFunctionSpec(funcVar.generateAssertion(this.omittedParams.get(funcVar.id))),
+                printFunctionSpec(funcVar.generateAssertion({
+                    omittedParams: this.omittedParams.get(funcVar.id),
+                })),
                 true,
             );
         } else if (ts.isPropertyDeclaration(member) && funcVar) {
@@ -350,7 +356,9 @@ export class Program {
                     ts.visitNode(member.initializer, this.addFunctionSpecVisitor),
                 ),
                 ts.SyntaxKind.MultiLineCommentTrivia,
-                printFunctionSpec(funcVar.generateAssertion(this.omittedParams.get(funcVar.id))),
+                printFunctionSpec(funcVar.generateAssertion({
+                    omittedParams: this.omittedParams.get(funcVar.id),
+                })),
                 true,
             );
         } else if (ts.isConstructorDeclaration(member)) {
