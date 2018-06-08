@@ -100,7 +100,7 @@ export class Function extends Variable {
 
         options = defaults(options, DEFAULT_SPEC_OPTIONS);
         const protoAssertion = options.includeProtoConstructorAssertions &&
-            this.program.getAllProtosAndConstructorsAssertion(this.classVar);
+            this.program.getAllProtosAndConstructorsAssertion(this.classVar, true);
 
         const paramAssertions: Assertion[] = this.params.map((param) => param.toAssertion());
 

@@ -6,12 +6,11 @@ import { DataProp } from "../assertions/DataProp";
 import { Disjunction } from "../assertions/Disjunction";
 import { EmptyFields } from "../assertions/EmptyFields";
 import { printFunctionSpec } from "../assertions/FunctionSpec";
-import { HardcodedStringAssertion } from "../assertions/HardcodedStringAssertion";
 import { JSObject } from "../assertions/JSObject";
 import { ScopeAssertion } from "../assertions/ScopeAssertion";
 import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";
 import { Function } from "./functions/Function";
-import { Program } from "./Program";
+import { CURR_SCOPE_LOGICAL, Program } from "./Program";
 import { Variable } from "./Variable";
 
 export interface ClassVisitor<T> {
@@ -214,8 +213,8 @@ export class Class {
         const parentProtoParam = this.inheritingFrom
             ? this.inheritingFrom.getProtoLogicalVariableName()
             : "$lobj_proto";
-        const scopeChain = forItself ? "$$scope" : "_";
-        return new HardcodedStringAssertion(`${predName}(${protoParam}, ${parentProtoParam}, ${scopeChain})`);
+        const scopeChain = forItself ? CURR_SCOPE_LOGICAL : "_";
+        return new CustomPredicate(predName, `${protoParam}, ${parentProtoParam}, ${scopeChain}`);
     }
 
     public getAlternativeProtoAndConstructorPredicateName(): string {

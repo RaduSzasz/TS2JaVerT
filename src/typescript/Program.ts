@@ -4,6 +4,7 @@ import { Assertion } from "../assertions/Assertion";
 import { FunctionPrototype } from "../assertions/FunctionPrototype";
 import { printFunctionSpec } from "../assertions/FunctionSpec";
 import { GlobalObject } from "../assertions/GlobalObject";
+import { HardcodedStringAssertion } from "../assertions/HardcodedStringAssertion";
 import { ObjectPrototype } from "../assertions/ObjectPrototype";
 import { ForbiddenPredicate } from "../assertions/predicates/ForbiddenPredicate";
 import { IndexSignaturePredicate } from "../assertions/predicates/IndexSignaturePredicate";
@@ -21,6 +22,9 @@ import {
 import { createCustomTransformers } from "./transformers/FileContext";
 import { Type } from "./Types";
 import { AssignedVariable, Variable } from "./Variable";
+
+export const CURR_SCOPE = "$$scope";
+export const CURR_SCOPE_LOGICAL = "#sc";
 
 export class Program {
     private program: ts.Program;
@@ -99,11 +103,15 @@ export class Program {
         return indexSignature;
     }
 
-    public getAllProtosAndConstructorsAssertion(classVar: Class | undefined): Assertion {
+    public getAllProtosAndConstructorsAssertion(
+        classVar: Class | undefined,
+        includeScopeEq: boolean = false,
+    ): Assertion {
         const otherClasses = classVar &&
             filter(this.classes, (cls) => cls !== classVar && !cls.isParentOf(classVar));
         const parent = classVar && classVar.getParent();
         return new SeparatingConjunctionList(compact([
+            includeScopeEq && new HardcodedStringAssertion(`(${CURR_SCOPE} == ${CURR_SCOPE_LOGICAL})`),
             classVar && classVar.getProtoAndConstructorAssertion(true),
             parent && parent.getAlternativeProtoAndConstructorAssertion(),
             ...map(otherClasses, (cls: Class) => cls.getProtoAndConstructorAssertion(false)),
