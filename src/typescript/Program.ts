@@ -394,6 +394,7 @@ export class Program {
                     cls.getProtoPredicate(),
                     cls.getConstructorPredicate(),
                     cls.getProtoAndConstructorPredicate(),
+                    cls.getAlternativeProtoAndConstructorPredicate(),
                 ]),
             ].join("\n");
             const commentedNode = ts.addSyntheticLeadingComment(

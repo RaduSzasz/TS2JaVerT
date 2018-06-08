@@ -197,11 +197,11 @@ export class Class {
             No constructor identified!`);
         }
         const constr = "constr";
-        const currProto = "#proto";
+        const currProto = "proto";
         const parentProto = "#pproto";
         const scopeChain = "#sch";
         return `
-        @pred ${this.getAlternativeProtoAndConstructorPredicateName()}(${constr}):
+        @pred ${this.getAlternativeProtoAndConstructorPredicateName()}(${constr}, ${currProto}):
             ${this.getConstructorPredicateName()}(${constr}, ${currProto}, ${scopeChain}) *
             ${this.getProtoPredicateName()}(${currProto}, ${parentProto}, ${scopeChain}) *
             sc_scope(${this.constr.id}, ${this.name} : ${constr}, ${scopeChain});
@@ -254,7 +254,7 @@ export class Class {
 
         return new SeparatingConjunctionList([
             new ScopeAssertion(s, "#s"),
-            new CustomPredicate(predName, "#s"),
+            new CustomPredicate(predName, `#s, ${this.getProtoLogicalVariableName()}`),
         ]);
     }
 
