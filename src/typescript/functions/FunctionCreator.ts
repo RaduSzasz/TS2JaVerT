@@ -25,7 +25,7 @@ export function createAndAnalyseFunction(
     }
     const name = getFunctionName(node, program);
     const returnType = ts.isConstructorDeclaration(node)
-        ? { typeFlag: TypeFlags.Any }
+        ? { typeFlag: TypeFlags.Void }
         : typeFromTSType(node.type!, program);
     const params: Variable[] = node
         .parameters
@@ -99,7 +99,7 @@ function createFunctionInstance(
         const hasExplicitReturn = classVar.doesClassInherit();
         return new Constructor(
             program,
-            hasExplicitReturn ? { typeFlag: TypeFlags.This } : { typeFlag: TypeFlags.Any },
+            hasExplicitReturn ? { typeFlag: TypeFlags.This } : { typeFlag: TypeFlags.Void },
             params,
             name,
             classVar);
