@@ -23,6 +23,7 @@ export enum AssertionKind {
     FunctionPrototype,
     FunctionObject,
     GlobalObject,
+    GlobalVar,
     HardcodedString,
     InSetAssertion,
     JSObject,

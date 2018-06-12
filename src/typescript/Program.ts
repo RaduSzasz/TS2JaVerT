@@ -4,6 +4,7 @@ import { Assertion } from "../assertions/Assertion";
 import { FunctionPrototype } from "../assertions/FunctionPrototype";
 import { printFunctionSpec } from "../assertions/FunctionSpec";
 import { GlobalObject } from "../assertions/GlobalObject";
+import { GlobalVar } from "../assertions/GlobalVar";
 import { HardcodedStringAssertion } from "../assertions/HardcodedStringAssertion";
 import { ObjectPrototype } from "../assertions/ObjectPrototype";
 import { ForbiddenPredicate } from "../assertions/predicates/ForbiddenPredicate";
@@ -115,6 +116,7 @@ export class Program {
             classVar && classVar.getProtoAndConstructorAssertion(true),
             parent && parent.getParentProtoAndConstructorAssertion(includeScopeEq),
             ...map(otherClasses, (cls: Class) => cls.getProtoAndConstructorAssertion(false)),
+            ...map(this.classes, (cls: Class) => new GlobalVar(cls.name, cls.getConstructorLogicalVariableName())),
             new ObjectPrototype(),
             new FunctionPrototype(),
             new GlobalObject(),
@@ -402,7 +404,6 @@ export class Program {
                     cls.getProtoPredicate(),
                     cls.getConstructorPredicate(),
                     cls.getProtoAndConstructorPredicate(),
-                    cls.getAlternativeProtoAndConstructorPredicate(),
                 ]),
             ].join("\n");
             const commentedNode = ts.addSyntheticLeadingComment(
