@@ -113,7 +113,7 @@ export class Program {
         return new SeparatingConjunctionList(compact([
             includeScopeEq && new HardcodedStringAssertion(`(${CURR_SCOPE} == ${CURR_SCOPE_LOGICAL})`),
             classVar && classVar.getProtoAndConstructorAssertion(true),
-            parent && parent.getAlternativeProtoAndConstructorAssertion(),
+            parent && parent.getParentProtoAndConstructorAssertion(includeScopeEq),
             ...map(otherClasses, (cls: Class) => cls.getProtoAndConstructorAssertion(false)),
             new ObjectPrototype(),
             new FunctionPrototype(),

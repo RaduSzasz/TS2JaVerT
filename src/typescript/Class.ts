@@ -1,4 +1,4 @@
-import { find, flatMap, isEqual, map } from "lodash";
+import { compact, find, flatMap, isEqual, map } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../assertions/Assertion";
 import { CustomPredicate } from "../assertions/CustomPredicate";
@@ -179,14 +179,16 @@ export class Class {
             No constructor identified!`);
         }
 
+        const predName = this.getProtoAndConstructorPredicateName();
         const currProto = "proto";
         const parentProto = "parentProto";
+        const constructor = "constr";
         const scopeChain = "sch";
 
         return `
-        @pred ${this.getProtoAndConstructorPredicateName()}(+${currProto}, ${parentProto}, ${scopeChain}):
-            sc_scope(${this.constr.id}, ${this.name} : #${this.name}, ${scopeChain}) *
-            ${this.getConstructorPredicateName()}(#${this.name}, ${currProto}, ${scopeChain}) *
+        @pred ${predName}(+${currProto}, ${parentProto}, ${constructor}, ${scopeChain}):
+            sc_scope(${this.constr.id}, ${this.name} : ${constructor}, ${scopeChain}) *
+            ${this.getConstructorPredicateName()}(${constructor}, ${currProto}, ${scopeChain}) *
             ${this.getProtoPredicateName()}(${currProto}, ${parentProto}, ${scopeChain});`;
     }
 
@@ -195,12 +197,13 @@ export class Class {
             throw new Error(`Cannot generate full predicate for class ${this.name}!
             No constructor identified!`);
         }
+        const predName = this.getAlternativeProtoAndConstructorPredicateName();
         const constr = "constr";
         const currProto = "proto";
-        const parentProto = "#pproto";
+        const parentProto = "pproto";
         const scopeChain = "#sch";
         return `
-        @pred ${this.getAlternativeProtoAndConstructorPredicateName()}(${constr}, ${currProto}):
+        @pred ${predName}(${constr}, ${currProto}, ${parentProto}):
             ${this.getConstructorPredicateName()}(${constr}, ${currProto}, ${scopeChain}) *
             ${this.getProtoPredicateName()}(${currProto}, ${parentProto}, ${scopeChain}) *
             sc_scope(${this.constr.id}, ${this.name} : ${constr}, ${scopeChain});
@@ -213,8 +216,13 @@ export class Class {
         const parentProtoParam = this.inheritingFrom
             ? this.inheritingFrom.getProtoLogicalVariableName()
             : "$lobj_proto";
-        const scopeChain = forItself ? CURR_SCOPE_LOGICAL : "_";
-        return new CustomPredicate(predName, `${protoParam}, ${parentProtoParam}, ${scopeChain}`);
+        const scopeChain = forItself ? CURR_SCOPE_LOGICAL : `#scope_${this.name}`;
+        const constructorName = `#${this.name}`;
+        return new CustomPredicate(predName,
+            protoParam,
+            parentProtoParam,
+            constructorName,
+            scopeChain);
     }
 
     public getAlternativeProtoAndConstructorPredicateName(): string {
@@ -247,20 +255,24 @@ export class Class {
         ));
     }
 
-    public getAlternativeProtoAndConstructorAssertion(): Assertion {
-        const predName = this.getAlternativeProtoAndConstructorPredicateName();
+    public getParentProtoAndConstructorAssertion(extractScope: boolean): Assertion {
+        const predName = this.getProtoAndConstructorPredicateName();
         const s = "_super";
+        const parentProto = this.inheritingFrom
+            ? this.inheritingFrom.getProtoLogicalVariableName()
+            : "$lobj_proto";
+        const scopeChain = `#scope_${this.name}`;
 
-        return new SeparatingConjunctionList([
-            new ScopeAssertion(s, "#s"),
-            new CustomPredicate(predName, `#s, ${this.getProtoLogicalVariableName()}`),
-        ]);
+        return new SeparatingConjunctionList(compact([
+            extractScope && new ScopeAssertion(s, "#s"),
+            new CustomPredicate(predName, this.getProtoLogicalVariableName(), parentProto, "#s", scopeChain),
+        ]));
     }
 
     public getExactAssertion(instanceName: string, protoLogicalVariable?: string): Assertion {
         const instancePredName = this.getInstancePredicateName();
         protoLogicalVariable = protoLogicalVariable || this.getProtoLogicalVariableName();
-        return new CustomPredicate(instancePredName, `${instanceName}, ${protoLogicalVariable}`);
+        return new CustomPredicate(instancePredName, instanceName, protoLogicalVariable);
     }
 
     public getProtoAssertion(): Assertion {
@@ -268,10 +280,10 @@ export class Class {
         const protoLogicalVariableName = this.getProtoLogicalVariableName();
         return new CustomPredicate(
             protoPredName,
-            `${protoLogicalVariableName}, ${
-                this.inheritingFrom
-                    ? this.inheritingFrom.getProtoLogicalVariableName()
-                    : "$lobj_proto"}`,
+            protoLogicalVariableName,
+            this.inheritingFrom
+                ? this.inheritingFrom.getProtoLogicalVariableName()
+                : "$lobj_proto",
         );
     }
 

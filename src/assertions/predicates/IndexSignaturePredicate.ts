@@ -10,7 +10,7 @@ export class IndexSignaturePredicate {
     constructor(private name: string, private type: Type) { }
 
     public toAssertion(varName: string, fields: string): Assertion {
-        return new CustomPredicate(this.name, `${varName}, ${fields}`);
+        return new CustomPredicate(this.name, varName, fields);
     }
 
     public getPredicate(): string {
@@ -26,7 +26,7 @@ export class IndexSignaturePredicate {
             new HardcodedStringAssertion(`(${allFields} == -u- (-{ ${fieldName} -}, ${otherFields}))`),
             new DataProp(o, fieldName, logicalVar, true),
             logicalVar.toAssertion(),
-            new CustomPredicate(this.name, `${o}, ${otherFields}`),
+            new CustomPredicate(this.name, o, otherFields),
         ]);
         return `
         @pred ${this.name}(${o}, ${allFields}):
