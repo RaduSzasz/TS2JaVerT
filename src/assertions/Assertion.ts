@@ -14,6 +14,7 @@ import { SeparatingConjunctionList } from "./SeparatingConjunctionList";
 import { TypesPredicate } from "./TypesPredicate";
 
 export enum AssertionKind {
+    AllProtos,
     Custom,
     DataProp,
     Disjunction,

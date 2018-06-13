@@ -1,12 +1,9 @@
-import { compact, filter, flatMap, flatten, isEqual, map, uniqWith } from "lodash";
+import { compact, flatMap, flatten, isEqual, map, uniqWith } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../assertions/Assertion";
-import { FunctionPrototype } from "../assertions/FunctionPrototype";
 import { printFunctionSpec } from "../assertions/FunctionSpec";
-import { GlobalObject } from "../assertions/GlobalObject";
-import { GlobalVar } from "../assertions/GlobalVar";
 import { HardcodedStringAssertion } from "../assertions/HardcodedStringAssertion";
-import { ObjectPrototype } from "../assertions/ObjectPrototype";
+import { AllProtosPredicate } from "../assertions/predicates/AllProtosPredicate";
 import { ForbiddenPredicate } from "../assertions/predicates/ForbiddenPredicate";
 import { IndexSignaturePredicate } from "../assertions/predicates/IndexSignaturePredicate";
 import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";
@@ -24,6 +21,8 @@ import { createCustomTransformers } from "./transformers/FileContext";
 import { Type } from "./Types";
 import { AssignedVariable, Variable } from "./Variable";
 
+export const OBJECT_PROTOTYPE_VAR = "$lobj_proto";
+export const SUPER_PARAM = "_super";
 export const CURR_SCOPE = "$$scope";
 export const CURR_SCOPE_LOGICAL = "#sc";
 
@@ -108,18 +107,9 @@ export class Program {
         classVar: Class | undefined,
         includeScopeEq: boolean = false,
     ): Assertion {
-        const otherClasses = classVar &&
-            filter(this.classes, (cls) => cls !== classVar && !cls.isParentOf(classVar));
-        const parent = classVar && classVar.getParent();
         return new SeparatingConjunctionList(compact([
             includeScopeEq && new HardcodedStringAssertion(`(${CURR_SCOPE} == ${CURR_SCOPE_LOGICAL})`),
-            classVar && classVar.getProtoAndConstructorAssertion(true),
-            parent && parent.getParentProtoAndConstructorAssertion(includeScopeEq),
-            ...map(otherClasses, (cls: Class) => cls.getProtoAndConstructorAssertion(false)),
-            ...map(this.classes, (cls: Class) => new GlobalVar(cls.name, cls.getConstructorLogicalVariableName())),
-            new ObjectPrototype(),
-            new FunctionPrototype(),
-            new GlobalObject(),
+            new AllProtosPredicate(this.classes, classVar),
         ]));
     }
 
@@ -405,6 +395,7 @@ export class Program {
                     cls.getConstructorPredicate(),
                     cls.getProtoAndConstructorPredicate(),
                 ]),
+                AllProtosPredicate.toPredicate(this.classes),
             ].join("\n");
             const commentedNode = ts.addSyntheticLeadingComment(
                 ts.createNotEmittedStatement(src.getFirstToken()),
