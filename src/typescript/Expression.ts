@@ -165,7 +165,7 @@ export function visitExpressionToFindAssignments(
         node.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
 
         const rightResult = visitExpression(node.right);
-        const leftResult = visitExpression(node.left);
+        const leftResult = visitExpressionToFindAssignments(node.left, params, outerScope, currentScope, program);
 
         const obj = ts.isIdentifier(node.left)
             ? node.left

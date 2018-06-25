@@ -23,7 +23,7 @@ export class IndexSignaturePredicate {
         const def1 = new HardcodedStringAssertion(`(${allFields} == -{ }-)`);
 
         const def2 = new SeparatingConjunctionList([
-            new HardcodedStringAssertion(`(${allFields} == -u- (-{ ${fieldName} -}, ${otherFields}))`),
+            new HardcodedStringAssertion(`(${allFields} == -u- (-{ ${fieldName} }-, ${otherFields}))`),
             new DataProp(o, fieldName, logicalVar, true),
             logicalVar.toAssertion(),
             new CustomPredicate(this.name, o, otherFields),

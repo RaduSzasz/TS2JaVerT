@@ -1,9 +1,9 @@
 import { compact } from "lodash";
 import * as ts from "typescript";
 import { Assertion } from "../assertions/Assertion";
-import { DataProp } from "../assertions/DataProp";
 import { FunctionObject } from "../assertions/FunctionObject";
 import { JSObject } from "../assertions/JSObject";
+import { PiPred } from "../assertions/PiPred";
 import { ForbiddenPredicate } from "../assertions/predicates/ForbiddenPredicate";
 import { IndexSignaturePredicate } from "../assertions/predicates/IndexSignaturePredicate";
 import { SeparatingConjunctionList } from "../assertions/SeparatingConjunctionList";
@@ -64,7 +64,7 @@ export class ObjectLiteral {
             ...this.regularFields.map((field: Variable) => {
                 const logicalVariable = Variable.logicalVariableFromVariable(field);
                 return new SeparatingConjunctionList([
-                    new DataProp(o, field.name, logicalVariable),
+                    new PiPred(o, field.name, logicalVariable),
                     logicalVariable.toAssertion(),
                 ]);
             }),

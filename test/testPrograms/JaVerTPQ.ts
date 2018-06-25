@@ -1,9 +1,7 @@
 class PQNode {
-    public static counter: number = 0;
-
-    private pri: number;
-    private val: number;
-    private next: PQNode | undefined;
+    public pri: number;
+    public val: number;
+    public next: PQNode | undefined;
 
     public constructor(pri: number, val: number) {
         this.pri = pri;
@@ -36,13 +34,13 @@ class PQ {
         this.head = n.insert(this.head);
     }
 
-    public dequeue(): { pri: number, val: number } {
+    public dequeue(): { pri: number, val: number } | undefined {
         if (this.head === undefined) {
             console.log("Queue is empty");
-        } else {
-            var first: PQNode = this.head;
-            this.head = this.head.next;
-            return { pri: first.pri, val: first.val };
+            return undefined;
         }
+        var first: PQNode = this.head;
+        this.head = this.head.next;
+        return { pri: first.pri, val: first.val };
     }
 }

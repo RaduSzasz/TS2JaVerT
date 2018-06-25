@@ -11,3 +11,6 @@ dist/
 yarn.lock
 
 *.js
+*.jsil
+
+my_test.ts

@@ -9,6 +9,7 @@ interface Circle {
 function createShape(s: "circle" | "square", sz: number): Square | Circle {
     if (s === "circle") {
         return { radius: sz };
+    } else if (s === "square") {
+        return { edgeSize: sz };
     }
-    return { edgeSize: sz };
 }

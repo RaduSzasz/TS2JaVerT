@@ -30,6 +30,7 @@ export enum AssertionKind {
     JSObject,
     None,
     ObjectPrototype,
+    Pi,
     Scope,
     SeparatingConjunction,
     Types,
